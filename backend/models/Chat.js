@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 const messageSchema = new mongoose.Schema({
   role: { type: String, enum: ['user', 'assistant', 'system'], required: true },
   content: { type: String, required: true },
+  feedback: { type: String, enum: ['up', 'down', null], default: null },
   timestamp: { type: Date, default: Date.now }
 });
 
@@ -10,6 +11,7 @@ const chatSchema = new mongoose.Schema({
   sessionId: { type: String, required: true, unique: true },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   title: { type: String, default: 'New Chat' },
+  isPinned: { type: Boolean, default: false },
   messages: [messageSchema],
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }

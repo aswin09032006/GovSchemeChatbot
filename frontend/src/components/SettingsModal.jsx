@@ -11,8 +11,6 @@ function SettingsModal({
   isOpen, onClose, 
   theme, setTheme, 
   language, setLanguage,
-  voiceLang, setVoiceLang,
-  voice, setVoice,
   ttsSpeed, setTtsSpeed,
   autoRead, setAutoRead,
   updatePreferences,
@@ -24,8 +22,6 @@ function SettingsModal({
 
   const handleChange = (key, value) => {
     switch (key) {
-      case 'voiceLang': setVoiceLang(value); break;
-      case 'voice': setVoice(value); break;
       case 'ttsSpeed': setTtsSpeed(value); break;
       case 'language': setLanguage(value); break;
       case 'theme': setTheme(value); break;
@@ -168,7 +164,7 @@ function SettingsModal({
           </div>
 
           {/* Content Area */}
-          <div className="flex-1 bg-white/80 dark:bg-[#14141c]/80 rounded-[24px] shadow-sm border border-gray-200 dark:border-white/[0.08] overflow-hidden flex flex-col backdrop-blur-xl relative">
+          <div className="flex-1 bg-white/80 dark:bg-[#14141c]/80 rounded-[24px] shadow-sm overflow-visible flex flex-col backdrop-blur-xl relative">
             
             {/* Sticky Header */}
             <div className="sticky top-0 z-10 pt-8 px-8 bg-white/95 dark:bg-[#14141c]/95 backdrop-blur-xl">
@@ -179,7 +175,7 @@ function SettingsModal({
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-8 pt-6">
+            <div className="flex-1 overflow-visible p-8 pt-6">
               
               {activeTab === 'preferences' && (
                 <div className="flex flex-col max-w-[550px]">
@@ -188,37 +184,17 @@ function SettingsModal({
 
                     <div className="flex flex-col gap-6">
                       <div className="flex items-center justify-between">
-                        <span className="text-[15px] text-gray-900 dark:text-[#e2e2e2] font-medium">Voice language</span>
-                        <CustomSelect 
-                          id="voiceLang"
-                          value={voiceLang} 
-                          onChange={(v) => handleChange('voiceLang', v)} 
-                          options={[{label: 'Auto-detect', value: 'Auto-detect'}, {label: 'English', value: 'English'}]} 
-                        />
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <span className="text-[15px] text-gray-900 dark:text-[#e2e2e2] font-medium">Voice</span>
-                        <CustomSelect 
-                          id="voice"
-                          value={voice} 
-                          onChange={(v) => handleChange('voice', v)} 
-                          options={[{label: 'Wave', value: 'Wave'}, {label: 'Breeze', value: 'Breeze'}, {label: 'Cove', value: 'Cove'}]} 
-                        />
-                      </div>
-
-                      <div className="flex items-center justify-between">
                         <span className="text-[15px] text-gray-900 dark:text-[#e2e2e2] font-medium">Language</span>
                         <CustomSelect 
                           id="language"
                           value={language} 
                           onChange={(v) => handleChange('language', v)} 
                           options={[
-                            {label: 'EN', value: 'English'}, 
-                            {label: 'TA', value: 'Tamil'},
-                            {label: 'HI', value: 'Hindi'},
-                            {label: 'TE', value: 'Telugu'},
-                            {label: 'ML', value: 'Malayalam'}
+                            {label: 'English', value: 'English'}, 
+                            {label: 'Tamil', value: 'Tamil'},
+                            {label: 'Hindi', value: 'Hindi'},
+                            {label: 'Telugu', value: 'Telugu'},
+                            {label: 'Malayalam', value: 'Malayalam'}
                           ]} 
                         />
                       </div>

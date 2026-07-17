@@ -1,7 +1,52 @@
-import React from 'react';
-import { Plus, ArrowUp, Glasses, AudioLines, ChevronDown, Info, MoreHorizontal, MessageSquare, Landmark, Trash2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Plus, ArrowUp, Glasses, AudioLines, ChevronDown, Info, MoreHorizontal, MessageSquare, Landmark, Trash2, Bot, Check } from 'lucide-react';
+import Tooltip from "./Tooltip";
 import { POPULAR_SCHEMES, ROW_ONE_CHIPS, ROW_TWO_CHIPS } from "../constants";
 import { formatTime } from "../utils/formatTime";
+
+const MODELS = [
+  { label: 'Llama 3.1 8B', value: 'meta/llama-3.1-8b-instruct' },
+  { label: 'Llama 3.1 70B', value: 'meta/llama-3.1-70b-instruct' },
+  { label: 'Llama 3.1 405B', value: 'meta/llama-3.1-405b-instruct' },
+  { label: 'Mixtral 8x22B', value: 'mistralai/mixtral-8x22b-instruct-v0.1' },
+];
+
+function ModelSelector({ model, setModel }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectedLabel = MODELS.find(m => m.value === model)?.label || 'Model';
+
+  return (
+    <div className="relative">
+      <button 
+        type="button" 
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-gray-600 dark:text-[#cfcfcf] hover:text-gray-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-[13px] font-medium"
+      >
+        <Bot size={16} />
+        <span className="max-w-[110px] truncate">{selectedLabel}</span>
+        <ChevronDown size={14} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+      
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
+          <div className="absolute top-full left-0 mt-2 w-[180px] bg-white dark:bg-[#1f2937] border border-gray-200 dark:border-white/10 rounded-xl shadow-xl z-20 py-1 overflow-hidden animate-in fade-in slide-in-from-top-2">
+            {MODELS.map(m => (
+              <button
+                key={m.value}
+                type="button"
+                onClick={() => { setModel(m.value); setIsOpen(false); }}
+                className={`w-full text-left px-3 py-2 text-[13px] transition-colors ${model === m.value ? 'bg-gray-50 dark:bg-white/10 text-gray-900 dark:text-white font-semibold' : 'text-gray-700 dark:text-[#cfcfcf] hover:bg-gray-100 dark:hover:bg-white/5'}`}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 function HomeView({
   handleSend,
@@ -14,55 +59,69 @@ function HomeView({
   toggleListening,
   isListening,
   currentUser,
+  model,
+  setModel,
 }) {
   const firstName = currentUser?.firstName || "Guest";
 
   return (
-    <div className="w-full flex flex-col items-center my-auto py-6">
-      <h1 className="text-[30px] font-semibold text-white tracking-[-0.01em] drop-shadow-md">
-        Hi {firstName}, what should we dive into today?
-      </h1>
-
-      <form
-        onSubmit={handleSend}
-        className="w-full max-w-[750px] bg-white/80 dark:bg-[#14141c]/80 shadow-2xl rounded-[32px] p-3 flex flex-col border border-gray-200 dark:border-white/[0.08] focus-within:border-gray-400 dark:focus-within:border-white/20 transition-all mt-4">
-        <div className="flex-1 flex flex-col mb-12">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask anything..."
-            className="w-full px-3 py-1 outline-none text-[15px] bg-transparent text-gray-900 dark:text-[#e7e7e7] placeholder-gray-500 dark:placeholder-[#8a8a8f]"
-            disabled={isLoading}
-          />
+    <div className="w-full h-full relative flex flex-col">
+      <div className="absolute top-0 left-0 w-full p-4 flex items-center justify-start z-10 pointer-events-none">
+        <div className="pointer-events-auto">
+          <ModelSelector model={model} setModel={setModel} />
         </div>
+      </div>
+      <div className="w-full flex flex-col items-center my-auto py-6">
+        <h1 className="text-[30px] font-semibold text-gray-900 dark:text-white tracking-[-0.01em] drop-shadow-md">
+          Hi {firstName}, what should we dive into today?
+        </h1>
 
-        <div className="flex items-center justify-between w-full px-1">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              className="p-2 text-gray-600 dark:text-[#cfcfcf] hover:text-gray-900 dark:hover:text-white rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
-              <Plus size={18} strokeWidth={2} />
-            </button>
+        <form
+          onSubmit={handleSend}
+          className="w-full max-w-[750px] bg-white/80 dark:bg-[#14141c]/80 shadow-2xl rounded-[32px] p-3 flex flex-col border border-gray-200 dark:border-white/[0.08] focus-within:border-gray-400 dark:focus-within:border-white/20 transition-all mt-4">
+          <div className="flex-1 flex flex-col mb-12">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Ask anything..."
+              className="w-full px-3 py-1 outline-none text-[15px] bg-transparent text-gray-900 dark:text-[#e7e7e7] placeholder-gray-500 dark:placeholder-[#8a8a8f]"
+              disabled={isLoading}
+            />
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={toggleListening}
-              type="button"
-              className={`p-2 rounded-full transition-colors ${isListening ? "text-red-500 bg-red-100 dark:bg-red-500/20" : "text-gray-600 dark:text-[#cfcfcf] hover:text-gray-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10"}`}>
-              <AudioLines size={18} strokeWidth={2} />
-            </button>
-            {input.trim() && (
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-8 h-8 bg-[#4D6285] dark:bg-[#5C7399] text-white flex items-center justify-center rounded-[10px] hover:bg-[#3D5275] dark:hover:bg-[#6C83A9] transition-colors disabled:opacity-50 ml-2">
-                <ArrowUp size={16} strokeWidth={2.5} />
-              </button>
-            )}
+
+          <div className="flex items-center justify-between w-full px-1">
+            <div className="flex items-center gap-1">
+              <Tooltip text="Attach File (Coming Soon)" delay={500}>
+                <button
+                  type="button"
+                  className="p-2 text-gray-600 dark:text-[#cfcfcf] hover:text-gray-900 dark:hover:text-white rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+                  <Plus size={18} strokeWidth={2} />
+                </button>
+              </Tooltip>
+            </div>
+            <div className="flex items-center gap-2">
+              <Tooltip text={isListening ? "Stop Voice Input" : "Start Voice Input"} delay={500}>
+                <button
+                  onClick={toggleListening}
+                  type="button"
+                  className={`p-2 rounded-full transition-colors ${isListening ? "text-red-500 bg-red-100 dark:bg-red-500/20" : "text-gray-600 dark:text-[#cfcfcf] hover:text-gray-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10"}`}>
+                  <AudioLines size={18} strokeWidth={2} />
+                </button>
+              </Tooltip>
+              {input.trim() && (
+                <Tooltip text="Send Message" delay={500}>
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-8 h-8 bg-[#4D6285] dark:bg-[#5C7399] text-white flex items-center justify-center rounded-[10px] hover:bg-[#3D5275] dark:hover:bg-[#6C83A9] transition-colors disabled:opacity-50 ml-2">
+                    <ArrowUp size={16} strokeWidth={2.5} />
+                  </button>
+                </Tooltip>
+              )}
+            </div>
           </div>
-        </div>
-      </form>
+        </form>
 
       {/* Suggestion Chips */}
       <div className="flex flex-col items-center mt-6 gap-2 w-full max-w-[800px]">
@@ -159,7 +218,7 @@ function HomeView({
                 No recent chats. Send a message to start!
               </div>
             ) : (
-              recentChats.map((item) => (
+              recentChats.slice(0, 3).map((item) => (
                 <div
                   key={item.sessionId}
                   onClick={() => switchSession(item.sessionId)}
@@ -202,6 +261,7 @@ function HomeView({
         </span>
         .
       </p>
+    </div>
     </div>
   );
 }

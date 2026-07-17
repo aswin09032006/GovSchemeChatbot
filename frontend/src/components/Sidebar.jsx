@@ -1,18 +1,26 @@
-import { LogOut, PanelRight, Plus, Settings, Trash2 } from "lucide-react";
+import { LogOut, PanelRight, Plus, Settings, Trash2, MoreHorizontal, Edit2, Pin, PinOff, Check, X as XIcon } from "lucide-react";
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import logoImg from "../assets/logo.png";
 import { SIDEBAR_SECTION_1, SIDEBAR_SECTION_2 } from "../constants";
+import Tooltip from "./Tooltip";
 
 function Sidebar({
   startNewChat,
   recentChats,
   switchSession,
   deleteSession,
+  renameSession,
+  pinSession,
   openSettings,
   onLogout,
-  currentUser
+  currentUser,
+  currentSessionId
 }) {
   const [isExpanded, setIsExpanded] = useState(true);
+  const [menuConfig, setMenuConfig] = useState(null);
+  const [editingChatId, setEditingChatId] = useState(null);
+  const [editTitle, setEditTitle] = useState("");
 
   const toggleSidebar = () => setIsExpanded(!isExpanded);
 
@@ -22,20 +30,24 @@ function Sidebar({
 
   return (
     <div
-      className={`flex-shrink-0 flex flex-col justify-between py-4 h-full transition-all duration-300 ease-in-out overflow-hidden px-3 ${isExpanded ? "w-[260px]" : "w-[56px]"}`}>
+      className={`relative z-50 flex-shrink-0 flex flex-col justify-between py-4 h-full transition-all duration-300 ease-in-out px-3 ${isExpanded ? "w-[260px]" : "w-[56px]"}`}>
       
       {/* Top Header */}
       <div className="flex items-center mb-6 h-8 w-full px-1">
-        <button onClick={toggleSidebar} className={`flex items-center justify-center flex-shrink-0 hover:opacity-80 transition-all duration-300 ease-in-out overflow-hidden ${isExpanded ? "w-0 opacity-0" : "w-8 opacity-100"}`}>
-          <img src={logoImg} alt="Logo" className="w-6 h-6 object-contain rounded-md" />
-        </button>
+        <Tooltip text="Expand Sidebar" delay={500}>
+          <button onClick={toggleSidebar} className={`flex items-center justify-center flex-shrink-0 hover:opacity-80 transition-all duration-300 ease-in-out overflow-hidden ${isExpanded ? "w-0 opacity-0" : "w-8 opacity-100"}`}>
+            <img src={logoImg} alt="Logo" className="w-6 h-6 object-contain rounded-md" />
+          </button>
+        </Tooltip>
         <div className={`flex items-center justify-between overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? "w-full opacity-100 pl-1" : "w-0 opacity-0 pl-0"}`}>
           <span className="font-semibold text-gray-900 dark:text-white text-[16px] whitespace-nowrap">
             PolicyPilot
           </span>
-          <button onClick={toggleSidebar} className="text-gray-500 hover:text-gray-900 dark:text-[#a3a3a3] dark:hover:text-white transition-colors flex-shrink-0">
-            <PanelRight size={20} strokeWidth={1.5} />
-          </button>
+          <Tooltip text="Collapse Sidebar" delay={500}>
+            <button onClick={toggleSidebar} className="text-gray-500 hover:text-gray-900 dark:text-[#a3a3a3] dark:hover:text-white transition-colors flex-shrink-0">
+              <PanelRight size={20} strokeWidth={1.5} />
+            </button>
+          </Tooltip>
         </div>
       </div>
 
@@ -52,7 +64,7 @@ function Sidebar({
               </div>
               <div className={`flex items-center justify-between overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? "w-full opacity-100 ml-2" : "w-0 opacity-0 ml-0"}`}>
                 <div className="flex items-center gap-2">
-                  <span className={`text-[14px] whitespace-nowrap ${label === "New chat" ? "text-gray-900 dark:text-white font-medium" : "text-gray-700 dark:text-[#e7e7e7] font-normal"}`}>
+                  <span className={`text-[15px] whitespace-nowrap ${label === "New chat" ? "text-gray-900 dark:text-white font-medium" : "text-gray-700 dark:text-[#e7e7e7] font-normal"}`}>
                     {label}
                   </span>
                   {badge && (
@@ -70,18 +82,73 @@ function Sidebar({
         </div>
 
         {/* Recent Chats Section */}
-        <div className={`flex flex-col gap-1 mt-2 overflow-hidden transition-all duration-300 ease-in-out ${isExpanded && recentChats?.length > 0 ? "opacity-100 max-h-[1000px]" : "opacity-0 max-h-0"}`}>
+        <div className={`flex flex-col mt-2 transition-all duration-300 ease-in-out ${isExpanded && recentChats?.length > 0 ? "opacity-100 max-h-[1000px] overflow-visible" : "opacity-0 max-h-0 overflow-hidden"}`}>
           {recentChats?.map((chat) => (
             <div
               key={chat.sessionId}
-              onClick={() => switchSession(chat.sessionId)}
-              className="px-3 py-2 text-[13px] text-gray-600 dark:text-[#a3a3a3] hover:bg-black/5 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white rounded-lg cursor-pointer flex justify-between items-center group">
-              <span className="truncate pr-2 whitespace-nowrap">{chat.title}</span>
-              <button
-                onClick={(e) => deleteSession(chat.sessionId, e)}
-                className="opacity-0 group-hover:opacity-100 hover:text-red-600 dark:hover:text-red-400 transition-all flex-shrink-0">
-                <Trash2 size={14} />
-              </button>
+              onClick={() => {
+                if (editingChatId !== chat.sessionId) switchSession(chat.sessionId);
+              }}
+              className={`px-3 py-1.5 mb-[2px] text-[14px] rounded-xl cursor-pointer flex justify-between items-center group transition-colors relative ${
+                chat.sessionId === currentSessionId 
+                  ? "bg-black/5 dark:bg-white/10 text-gray-900 dark:text-white font-medium" 
+                  : "text-gray-600 dark:text-[#a3a3a3] hover:bg-black/5 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white"
+              }`}>
+              
+              {editingChatId === chat.sessionId ? (
+                <div className="flex items-center w-full gap-2">
+                  <input
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        if(editTitle.trim()) renameSession(chat.sessionId, editTitle);
+                        setEditingChatId(null);
+                      } else if (e.key === 'Escape') {
+                        setEditingChatId(null);
+                      }
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex-1 min-w-0 bg-white dark:bg-[#111] text-gray-900 dark:text-white border border-blue-500 rounded px-2 py-1 text-[13px] outline-none"
+                  />
+                  <button onClick={(e) => { e.stopPropagation(); if(editTitle.trim()) renameSession(chat.sessionId, editTitle); setEditingChatId(null); }} className="text-green-600 dark:text-green-400 p-1 flex-shrink-0 hover:bg-green-100 dark:hover:bg-green-500/20 rounded">
+                    <Check size={14} strokeWidth={2.5} />
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); setEditingChatId(null); }} className="text-gray-500 hover:text-gray-900 dark:hover:text-white p-1 flex-shrink-0 hover:bg-gray-200 dark:hover:bg-white/20 rounded">
+                    <XIcon size={14} strokeWidth={2.5} />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2 overflow-hidden flex-1">
+                    {chat.isPinned && <Pin size={12} className="flex-shrink-0 text-blue-500 dark:text-blue-400 fill-current" />}
+                    <span className="truncate pr-2 whitespace-nowrap">{chat.title}</span>
+                  </div>
+                  
+                  <div className="relative flex-shrink-0">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (menuConfig?.id === chat.sessionId) {
+                          setMenuConfig(null);
+                        } else {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          setMenuConfig({
+                            id: chat.sessionId,
+                            x: rect.right,
+                            y: rect.bottom,
+                            chat
+                          });
+                        }
+                      }}
+                      className={`transition-all p-1.5 rounded-md hover:bg-black/10 dark:hover:bg-white/10 ${menuConfig?.id === chat.sessionId ? 'opacity-100 text-gray-900 dark:text-white' : 'opacity-0 group-hover:opacity-100 text-gray-500 dark:text-[#a3a3a3]'}`}>
+                      <MoreHorizontal size={16} />
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           ))}
         </div>
@@ -109,7 +176,7 @@ function Sidebar({
             <Settings size={18} strokeWidth={1.5} className="text-gray-500 dark:text-[#a3a3a3]" />
           </div>
           <div className={`flex items-center justify-between overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? "w-full opacity-100 ml-2" : "w-0 opacity-0 ml-0"}`}>
-            <span className="text-[14px] text-gray-700 dark:text-[#e7e7e7] font-normal whitespace-nowrap">
+            <span className="text-[15px] text-gray-700 dark:text-[#e7e7e7] font-normal whitespace-nowrap">
               Settings
             </span>
           </div>
@@ -122,12 +189,12 @@ function Sidebar({
           {initial}
         </div>
         <div className={`flex items-center justify-between overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? "w-full opacity-100 ml-3" : "w-0 opacity-0 ml-0"}`}>
-          <div className="flex flex-col">
-            <span className="text-[13px] text-gray-900 dark:text-white font-medium leading-tight whitespace-nowrap">
+          <div className="flex flex-col overflow-hidden">
+            <span className="text-[14px] text-gray-900 dark:text-white font-medium leading-tight whitespace-nowrap truncate">
               {firstName}
             </span>
-            <span className="text-[11px] text-gray-500 dark:text-[#888] leading-tight whitespace-nowrap">
-              Free Plan
+            <span className="text-[12px] text-gray-500 dark:text-[#888] leading-tight whitespace-nowrap truncate">
+              {currentUser?.email || 'guest@example.com'}
             </span>
           </div>
           <button 
@@ -138,6 +205,39 @@ function Sidebar({
           </button>
         </div>
       </div>
+
+      {menuConfig && createPortal(
+        <>
+          <div className="fixed inset-0 z-[9998]" onClick={(e) => { e.stopPropagation(); setMenuConfig(null); }} />
+          <div 
+            style={{ 
+              top: menuConfig.y + 4, 
+              left: menuConfig.x - 128, 
+            }}
+            className="fixed w-32 bg-white dark:bg-[#1f2937] border border-gray-200 dark:border-white/10 rounded-xl shadow-xl z-[9999] py-1 overflow-hidden animate-in zoom-in-95 duration-100" 
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => { pinSession(menuConfig.chat.sessionId, !menuConfig.chat.isPinned); setMenuConfig(null); }}
+              className="w-full text-left px-3 py-2 text-[14px] hover:bg-gray-100 dark:hover:bg-white/10 flex items-center gap-2 text-gray-700 dark:text-[#cfcfcf] transition-colors">
+              {menuConfig.chat.isPinned ? <><PinOff size={14}/> Unpin</> : <><Pin size={14}/> Pin</>}
+            </button>
+            <button
+              onClick={() => { setEditTitle(menuConfig.chat.title); setEditingChatId(menuConfig.chat.sessionId); setMenuConfig(null); }}
+              className="w-full text-left px-3 py-2 text-[14px] hover:bg-gray-100 dark:hover:bg-white/10 flex items-center gap-2 text-gray-700 dark:text-[#cfcfcf] transition-colors">
+              <Edit2 size={14}/> Rename
+            </button>
+            <div className="w-full h-px bg-gray-200 dark:bg-white/10 my-1" />
+            <button
+              onClick={(e) => { deleteSession(menuConfig.chat.sessionId, e); setMenuConfig(null); }}
+              className="w-full text-left px-3 py-2 text-[14px] hover:bg-red-50 dark:hover:bg-red-500/10 flex items-center gap-2 text-red-600 dark:text-red-400 transition-colors">
+              <Trash2 size={14}/> Delete
+            </button>
+          </div>
+        </>,
+        document.body
+      )}
+
     </div>
   );
 }
