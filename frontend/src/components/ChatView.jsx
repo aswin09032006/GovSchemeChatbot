@@ -69,7 +69,7 @@ function ChatView({ messages, messagesEndRef, handleSend, input, setInput, isLoa
   const handleDownloadPDF = async (formData) => {
     try {
       const token = localStorage.getItem('govSchemeAuthToken') || localStorage.getItem('token');
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const apiUrl = (import.meta.env.VITE_API_URL || 'https://policypilot-backend-cs2y.onrender.com').replace(/\/$/, '');
       const response = await fetch(`${apiUrl}/api/form/generate`, {
         method: 'POST',
         headers: {

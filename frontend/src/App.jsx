@@ -10,7 +10,8 @@ import AuthView from './components/AuthView';
 import bgImage from './assets/bg.png';
 import logoImg from './assets/logo.png';
 
-const API_URL = 'http://localhost:5000/api/chat';
+const API_BASE = (import.meta.env.VITE_API_URL || 'https://policypilot-backend-cs2y.onrender.com').replace(/\/$/, '');
+const API_URL = `${API_BASE}/api/chat`;
 
 const getLocaleCode = (lang) => {
   switch (lang) {
@@ -256,7 +257,7 @@ function App() {
   // Validate session token with backend on initial mount
   useEffect(() => {
     if (authToken) {
-      axios.get('http://localhost:5000/api/auth/me')
+      axios.get(`${API_BASE}/api/auth/me`)
         .then(res => {
           if (res.data?.user) {
             setCurrentUser(res.data.user);

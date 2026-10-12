@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Landmark, ExternalLink, Loader2 } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_BASE = (import.meta.env.VITE_API_URL || 'https://policypilot-backend-cs2y.onrender.com').replace(/\/$/, '');
 
 const SchemeCard = ({ item, idx }) => {
   const [imageSrc, setImageSrc] = useState(item.image || null);

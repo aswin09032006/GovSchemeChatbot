@@ -3,7 +3,8 @@ import axios from 'axios';
 import { CircleDot } from 'lucide-react';
 import bgImage from '../assets/loginbg.png';
 
-const API_URL = 'http://localhost:5000/api/auth';
+const API_BASE = (import.meta.env.VITE_API_URL || 'https://policypilot-backend-cs2y.onrender.com').replace(/\/$/, '');
+const API_URL = `${API_BASE}/api/auth`;
 
 function AuthView({ onLogin }) {
   const [isLogin, setIsLogin] = useState(false);
