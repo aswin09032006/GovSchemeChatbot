@@ -1,52 +1,8 @@
-import React, { useState } from 'react';
-import { Plus, ArrowUp, Glasses, AudioLines, ChevronDown, Info, MoreHorizontal, MessageSquare, Landmark, Trash2, Bot, Check } from 'lucide-react';
+import React from 'react';
+import { Plus, ArrowUp, Glasses, AudioLines, Info, MoreHorizontal, MessageSquare, Landmark, Trash2 } from 'lucide-react';
 import Tooltip from "./Tooltip";
 import { POPULAR_SCHEMES, ROW_ONE_CHIPS, ROW_TWO_CHIPS } from "../constants";
 import { formatTime } from "../utils/formatTime";
-
-const MODELS = [
-  { label: 'Llama 3.1 8B', value: 'meta/llama-3.1-8b-instruct' },
-  { label: 'Llama 3.1 70B', value: 'meta/llama-3.1-70b-instruct' },
-  { label: 'Llama 3.1 405B', value: 'meta/llama-3.1-405b-instruct' },
-  { label: 'Mixtral 8x22B', value: 'mistralai/mixtral-8x22b-instruct-v0.1' },
-];
-
-function ModelSelector({ model, setModel }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const selectedLabel = MODELS.find(m => m.value === model)?.label || 'Model';
-
-  return (
-    <div className="relative">
-      <button 
-        type="button" 
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-gray-600 dark:text-[#cfcfcf] hover:text-gray-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-[13px] font-medium"
-      >
-        <Bot size={16} />
-        <span className="max-w-[110px] truncate">{selectedLabel}</span>
-        <ChevronDown size={14} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
-      
-      {isOpen && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
-          <div className="absolute top-full left-0 mt-2 w-[180px] bg-white dark:bg-[#1f2937] border border-gray-200 dark:border-white/10 rounded-xl shadow-xl z-20 py-1 overflow-hidden animate-in fade-in slide-in-from-top-2">
-            {MODELS.map(m => (
-              <button
-                key={m.value}
-                type="button"
-                onClick={() => { setModel(m.value); setIsOpen(false); }}
-                className={`w-full text-left px-3 py-2 text-[13px] transition-colors ${model === m.value ? 'bg-gray-50 dark:bg-white/10 text-gray-900 dark:text-white font-semibold' : 'text-gray-700 dark:text-[#cfcfcf] hover:bg-gray-100 dark:hover:bg-white/5'}`}
-              >
-                {m.label}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
 
 function HomeView({
   handleSend,
@@ -59,18 +15,11 @@ function HomeView({
   toggleListening,
   isListening,
   currentUser,
-  model,
-  setModel,
 }) {
   const firstName = currentUser?.firstName || "Guest";
 
   return (
     <div className="w-full h-full relative flex flex-col">
-      <div className="absolute top-0 left-0 w-full p-4 flex items-center justify-start z-10 pointer-events-none">
-        <div className="pointer-events-auto">
-          <ModelSelector model={model} setModel={setModel} />
-        </div>
-      </div>
       <div className="w-full flex flex-col items-center my-auto py-6">
         <h1 className="text-[30px] font-semibold text-gray-900 dark:text-white tracking-[-0.01em] drop-shadow-md">
           Hi {firstName}, what should we dive into today?

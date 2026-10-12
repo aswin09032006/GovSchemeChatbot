@@ -37,7 +37,6 @@ function App() {
   const [recentChats, setRecentChats] = useState([]);
   const [theme, setTheme] = useState(localStorage.getItem('govSchemeTheme') || 'system');
   const [language, setLanguage] = useState(localStorage.getItem('govSchemeLanguage') || 'English');
-  const [model, setModel] = useState(localStorage.getItem('govSchemeModel') || 'meta/llama-3.1-8b-instruct');
   const [ttsSpeed, setTtsSpeed] = useState('Normal');
   const [autoRead, setAutoRead] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -287,8 +286,7 @@ function App() {
         body: JSON.stringify({
           sessionId: sessionId || null,
           content: messageContent,
-          language: language,
-          model: model
+          language: language
         })
       });
 
@@ -427,8 +425,7 @@ function App() {
         body: JSON.stringify({
           sessionId,
           messageIndex,
-          language,
-          model
+          language
         })
       });
 
@@ -613,11 +610,6 @@ function App() {
               toggleListening={toggleListening}
               isListening={isListening}
               currentUser={currentUser}
-              model={model}
-              setModel={(val) => {
-                setModel(val);
-                localStorage.setItem('govSchemeModel', val);
-              }}
               handleFeedback={handleFeedback}
               handleRegenerate={handleRegenerate}
             />
@@ -635,11 +627,6 @@ function App() {
               speakText={speakText}
               activeSpeechIndex={activeSpeechIndex}
               isStreaming={isStreaming}
-              model={model}
-              setModel={(val) => {
-                setModel(val);
-                localStorage.setItem('govSchemeModel', val);
-              }}
               handleFeedback={handleFeedback}
               handleRegenerate={handleRegenerate}
             />

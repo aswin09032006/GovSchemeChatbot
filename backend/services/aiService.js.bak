@@ -1,0 +1,202 @@
+import OpenAI from 'openai';
+import dotenv from 'dotenv';
+dotenv.config();
+
+const openai = new OpenAI({
+  apiKey: 'ollama', // Ollama doesn't require an API key, but the SDK expects a string
+  baseURL: 'http://127.0.0.1:11434/v1',
+});
+
+const SYSTEM_PROMPT = `You are a helpful AI assistant that helps citizens understand and access government welfare schemes.
+Always be polite, clear, and easy to understand.
+Provide details like eligibility, required documents, benefits, and application steps when asked about schemes.
+
+FORM FILLING INSTRUCTIONS:
+If the user asks you to help them fill a form or apply for a scheme, act as a conversational form filler.
+1. Ask for their details ONE BY ONE in a friendly conversational manner. Do not ask for everything at once. 
+2. Ask for details such as: Full Name, Age, Address, Aadhaar Number, and Annual Income.
+3. Once you have collected ALL required details, output a special JSON block at the very end of your message exactly like this:
+
+\`\`\`json
+{
+  "FORM_COMPLETE": true,
+  "schemeName": "<name of scheme>",
+  "data": {
+    "name": "<user name>",
+    "age": "<user age>",
+    "address": "<user address>",
+    "aadhaar": "<user aadhaar>",
+    "income": "<user income>"
+  }
+}
+\`\`\`
+Do NOT output this JSON block until you have collected all the information.
+
+FORMATTING RULES:
+- You MUST structure your responses using Markdown formatting.
+- Use bullet points for lists (e.g., required documents or steps).
+- Use **bold text** for important terms, keywords, or emphasis.
+- Use headers (##) to clearly separate different sections like "Eligibility", "Benefits", and "Required Documents".
+- Break down long paragraphs into easily readable, structured sections. Do NOT output a wall of text.`;
+
+export const getAiResponse = async (chatHistory, language = 'Tamil', model = 'llama3.1') => {
+  try {
+    const langInstructions = `CRITICAL LANGUAGE RULE: You MUST reply entirely in ${language}. 
+Ignore the language the user typed in, and always translate your final response into ${language}.`;
+    
+    const completion = await openai.chat.completions.create({
+      model: model,
+      messages: [
+        { role: "system", content: `${SYSTEM_PROMPT}\n\n${langInstructions}` },
+        ...chatHistory.map(msg => ({ role: msg.role, content: msg.content }))
+      ],
+      temperature: 0.5,
+      max_tokens: 4096,
+      top_p: 1,
+      stream: false,
+    });
+
+    return completion.choices[0].message.content;
+  } catch (error) {
+    console.error("Error communicating with NVIDIA NIM:", error);
+    throw error;
+  }
+};
+
+import { search } from 'duck-duck-scrape';
+
+export const streamAiResponse = async (chatHistory, language = 'Tamil', res, model = 'llama3.1') => {
+  try {
+    const langInstructions = `CRITICAL LANGUAGE RULE: You MUST reply entirely in ${language}. 
+Ignore the language the user typed in, and always translate your final response into ${language}.
+If the user asks for exact links or forms, use the search_internet tool to find the exact official URL.`;
+    
+    const messages = [
+      { role: "system", content: `${SYSTEM_PROMPT}\n\n${langInstructions}` },
+      ...chatHistory.map(msg => ({ role: msg.role, content: msg.content }))
+    ];
+
+    const tools = [
+      {
+        type: "function",
+        function: {
+          name: "search_internet",
+          description: "Search the internet for real-time information, such as the official link to a government scheme or application form.",
+          parameters: {
+            type: "object",
+            properties: {
+              query: { type: "string", description: "The search query" }
+            },
+            required: ["query"]
+          }
+        }
+      }
+    ];
+
+    const stream = await openai.chat.completions.create({
+      model: model,
+      messages: messages,
+      tools: tools,
+      tool_choice: "auto",
+      temperature: 0.5,
+      max_tokens: 4096,
+      top_p: 1,
+      stream: true,
+    });
+
+    let fullResponse = "";
+    let isToolCall = false;
+    let toolCalls = [];
+
+    for await (const chunk of stream) {
+      const delta = chunk.choices[0]?.delta;
+      if (delta?.tool_calls) {
+        isToolCall = true;
+        for (const toolCall of delta.tool_calls) {
+          if (!toolCalls[toolCall.index]) {
+            toolCalls[toolCall.index] = { id: toolCall.id, type: 'function', function: { name: toolCall.function.name, arguments: '' } };
+          }
+          if (toolCall.function.arguments) {
+            toolCalls[toolCall.index].function.arguments += toolCall.function.arguments;
+          }
+        }
+      } else if (delta?.content && !isToolCall) {
+        fullResponse += delta.content;
+        res.write(`data: ${JSON.stringify({ content: delta.content })}\n\n`);
+      }
+    }
+
+    if (isToolCall) {
+      res.write(`data: ${JSON.stringify({ content: "\n*(Searching the internet for exact official links...)*\n\n" })}\n\n`);
+      fullResponse += "\n*(Searching the internet for exact official links...)*\n\n";
+
+      const toolMessage = { role: "assistant", tool_calls: toolCalls, content: null };
+      messages.push(toolMessage);
+
+      for (const toolCall of toolCalls) {
+        if (toolCall.function.name === 'search_internet') {
+          try {
+            const args = JSON.parse(toolCall.function.arguments);
+            const searchResults = await search(args.query);
+            const topResults = searchResults.results.slice(0, 4).map(r => `Title: ${r.title}\nURL: ${r.url}\nSnippet: ${r.description}`).join('\n\n');
+            
+            messages.push({
+              tool_call_id: toolCall.id,
+              role: "tool",
+              name: "search_internet",
+              content: topResults || "No results found."
+            });
+          } catch (e) {
+            messages.push({
+              tool_call_id: toolCall.id,
+              role: "tool",
+              name: "search_internet",
+              content: "Search failed or no results."
+            });
+          }
+        }
+      }
+
+      const secondStream = await openai.chat.completions.create({
+        model: model,
+        messages: messages,
+        temperature: 0.5,
+        max_tokens: 4096,
+        top_p: 1,
+        stream: true,
+      });
+
+      for await (const chunk of secondStream) {
+        const content = chunk.choices[0]?.delta?.content || "";
+        if (content) {
+          fullResponse += content;
+          res.write(`data: ${JSON.stringify({ content })}\n\n`);
+        }
+      }
+    }
+
+    return fullResponse;
+  } catch (error) {
+    console.error("Error communicating with NVIDIA NIM streaming:", error);
+    throw error;
+  }
+};
+
+export const generateTitle = async (messageContent, language = 'English') => {
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "llama3.1", // Fast local model for quick title generation
+      messages: [
+        { role: "system", content: `You are a helpful assistant. Summarize the user's message into a very short chat title (maximum 4 words). Do not include any quotes, punctuation, or filler words. Generate the title entirely in ${language}.` },
+        { role: "user", content: messageContent }
+      ],
+      temperature: 0.3,
+      max_tokens: 15,
+      stream: false,
+    });
+    return completion.choices[0].message.content.trim().replace(/^["']|["']$/g, '');
+  } catch (error) {
+    console.error("Error generating title:", error);
+    return messageContent.length > 30 ? messageContent.substring(0, 30) + '...' : messageContent; // Fallback
+  }
+};

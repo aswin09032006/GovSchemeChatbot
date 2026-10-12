@@ -123,7 +123,7 @@ router.post('/', async (req, res) => {
 
     // Stream AI response and collect full text
     const { streamAiResponse } = await import('../services/aiService.js');
-    const aiResponseContent = await streamAiResponse(historyForAi, language, res, model);
+    const aiResponseContent = await streamAiResponse(historyForAi, language, res);
 
     // End stream signal
     res.write(`data: [DONE]\n\n`);
@@ -139,10 +139,21 @@ router.post('/', async (req, res) => {
     await chat.save();
 
   } catch (err) {
+    console.error("Chat message route error:", err.message);
     if (!res.headersSent) {
       res.status(500).json({ error: err.message });
     } else {
-      res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
+      const isRateLimit = err.status === 429 || (err.message && err.message.includes('429'));
+      const friendlyMessage = isRateLimit 
+        ? "⚠️ **AI Service Rate Limit (429)**\n\nGoogle Gemini's free tier request limit was temporarily reached due to frequent requests. Please wait **15–30 seconds** and try again, or switch model to **Gemini Flash Lite**."
+        : `⚠️ **Service Error**: ${err.message}`;
+
+      const fallbackJson = JSON.stringify({
+        blocks: [{ type: "markdown", content: friendlyMessage }]
+      });
+
+      res.write(`data: ${JSON.stringify({ content: fallbackJson })}\n\n`);
+      res.write(`data: [DONE]\n\n`);
       res.end();
     }
   }
@@ -174,7 +185,7 @@ router.post('/regenerate', async (req, res) => {
     res.flushHeaders();
 
     const { streamAiResponse } = await import('../services/aiService.js');
-    const aiResponseContent = await streamAiResponse(historyForAi, language, res, model);
+    const aiResponseContent = await streamAiResponse(historyForAi, language, res);
 
     res.write(`data: [DONE]\n\n`);
     res.end();
@@ -184,10 +195,21 @@ router.post('/regenerate', async (req, res) => {
     chat.updatedAt = Date.now();
     await chat.save();
   } catch (err) {
+    console.error("Regenerate route error:", err.message);
     if (!res.headersSent) {
       res.status(500).json({ error: err.message });
     } else {
-      res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
+      const isRateLimit = err.status === 429 || (err.message && err.message.includes('429'));
+      const friendlyMessage = isRateLimit 
+        ? "⚠️ **AI Service Rate Limit (429)**\n\nGoogle Gemini's free tier request limit was temporarily reached. Please wait **15–30 seconds** and retry."
+        : `⚠️ **Service Error**: ${err.message}`;
+
+      const fallbackJson = JSON.stringify({
+        blocks: [{ type: "markdown", content: friendlyMessage }]
+      });
+
+      res.write(`data: ${JSON.stringify({ content: fallbackJson })}\n\n`);
+      res.write(`data: [DONE]\n\n`);
       res.end();
     }
   }

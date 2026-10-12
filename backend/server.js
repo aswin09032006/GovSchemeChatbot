@@ -14,8 +14,12 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
+import formRoutes from './routes/formRoutes.js';
+import imageRoutes from './routes/imageRoutes.js';
 app.use('/api/auth', authRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/form', formRoutes);
+app.use('/api/images', imageRoutes);
 
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI)

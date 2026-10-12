@@ -10,7 +10,7 @@ export const SIDEBAR_SECTION_1 = [
 export const SIDEBAR_SECTION_2 = [];
 
 export const ROW_ONE_CHIPS = ['Schemes for farmers', 'Education loans for students', 'Health insurance schemes'];
-export const ROW_TWO_CHIPS = ['Find schemes by state', 'Documents needed for PM Awas Yojana'];
+export const ROW_TWO_CHIPS = ['Find schemes by state', 'Documents needed for PM Awas Yojana', 'Find nearest E-Seva / CSC centre'];
 
 export const POPULAR_SCHEMES = [
   { title: 'PM Kisan Samman Nidhi', desc: 'Income support for all landholding farmers' },
