@@ -43,8 +43,16 @@ function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const messagesEndRef = useRef(null);
+  const mainContainerRef = useRef(null);
 
   const isChatView = location.pathname.startsWith('/c/');
+
+  // Reset any parent container scroll offset on route or view transition
+  useEffect(() => {
+    if (mainContainerRef.current) {
+      mainContainerRef.current.scrollTop = 0;
+    }
+  }, [location.pathname, isChatView]);
 
   // Speech Recognition State
   const [isListening, setIsListening] = useState(false);
@@ -309,7 +317,10 @@ function App() {
   }, [sessionId, authToken]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    if (mainContainerRef.current) {
+      mainContainerRef.current.scrollTop = 0;
+    }
   }, [messages, isChatView]);
 
   const [isStreaming, setIsStreaming] = useState(false);
@@ -664,7 +675,10 @@ function App() {
       />
 
       {/* Main Container */}
-      <div className={`relative z-10 flex-1 h-full flex flex-col items-center transition-all duration-500 overflow-x-hidden rounded-none md:rounded-[20px] border-0 md:border border-gray-200 dark:border-white/[0.08] ${isChatView ? 'overflow-hidden justify-between' : 'overflow-y-auto'}`}>
+      <div
+        ref={mainContainerRef}
+        className={`relative z-10 flex-1 h-full flex flex-col items-center transition-all duration-500 overflow-x-hidden rounded-none md:rounded-[20px] border-0 md:border border-gray-200 dark:border-white/[0.08] ${isChatView ? 'overflow-hidden' : 'overflow-y-auto'}`}
+      >
 
         {/* Mobile App Bar */}
         <div className="w-full md:hidden flex items-center justify-between px-3 sm:px-4 py-2.5 border-b border-gray-200/80 dark:border-white/10 bg-white/80 dark:bg-[#0b0f19]/80 backdrop-blur-xl z-30 sticky top-0 flex-shrink-0">

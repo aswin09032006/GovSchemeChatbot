@@ -97,8 +97,8 @@ function ChatView({ messages, messagesEndRef, handleSend, input, setInput, isLoa
   };
 
   return (
-    <div className="w-full h-full relative">
-      <div className="w-full h-full overflow-y-auto pt-3 sm:pt-8 pb-32 sm:pb-40 px-2.5 sm:px-4 custom-scrollbar flex flex-col items-center">
+    <div className="w-full flex-1 min-h-0 relative flex flex-col">
+      <div className="w-full flex-1 min-h-0 overflow-y-auto pt-4 sm:pt-8 pb-32 sm:pb-40 px-2.5 sm:px-4 custom-scrollbar flex flex-col items-center">
         <div className="w-full max-w-[800px] flex flex-col min-w-0">
           {messages.map((msg, index) => (
             <div key={index} className={`w-full mb-6 sm:mb-8 ${msg.role === 'user' ? 'flex justify-end' : 'flex flex-col sm:flex-row items-start gap-2 sm:gap-3.5'}`}>

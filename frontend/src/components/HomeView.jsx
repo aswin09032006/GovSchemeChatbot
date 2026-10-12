@@ -19,7 +19,7 @@ function HomeView({
   const firstName = currentUser?.firstName || "Guest";
 
   return (
-    <div className="w-full h-full relative flex flex-col">
+    <div className="w-full flex-1 min-h-0 relative flex flex-col">
       <div className="w-full flex flex-col items-center my-auto py-4 sm:py-6 px-3 sm:px-6">
         <h1 className="text-[22px] sm:text-[30px] font-semibold text-gray-900 dark:text-white tracking-[-0.01em] drop-shadow-md text-center px-2 leading-tight sm:leading-normal">
           Hi {firstName}, what should we dive into today?

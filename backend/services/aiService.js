@@ -409,7 +409,7 @@ If the user asks for exact links or forms, use the search_internet tool to find 
 };
 
 export const generateTitle = async (messageContent, language = 'English', model = 'gemini-2.5-flash') => {
-  const chosenModel = resolveModel(model);
+  const chosenModel = model || 'gemini-2.5-flash';
   const fallbackTitle = (str) => (!str ? 'New Chat' : str.length > 30 ? str.substring(0, 30) + '...' : str);
 
   if (chosenModel === 'hosted-llm') {

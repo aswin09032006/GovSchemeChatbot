@@ -24,8 +24,14 @@ async function searchDdgImages(query) {
         }
       }
     );
-    const data = await imgRes.json();
-    if (!data.results || data.results.length === 0) return null;
+    if (!imgRes.ok) return null;
+    let data;
+    try {
+      data = await imgRes.json();
+    } catch {
+      return null;
+    }
+    if (!data || !data.results || data.results.length === 0) return null;
 
     const top = data.results[0];
     let sourceHost = 'Government Portal';
