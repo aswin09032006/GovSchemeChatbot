@@ -39,22 +39,22 @@ export default function InteractiveForm({ data, onSubmit }) {
   if (!data || !data.questions) return null;
 
   return (
-    <div className="w-full bg-white dark:bg-[#0c0c14] text-gray-900 dark:text-white border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden mt-4 mb-4 shadow-sm">
+    <div className="w-full bg-white dark:bg-[#0c0c14] text-gray-900 dark:text-white border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden mt-3 sm:mt-4 mb-3 sm:mb-4 shadow-sm">
       {/* Header */}
-      <div className="p-5 border-b border-gray-100 dark:border-gray-800 bg-gray-50/60 dark:bg-white/[0.02]">
-        <h3 className="font-semibold text-[16px] text-gray-900 dark:text-white">
+      <div className="p-4 sm:p-5 border-b border-gray-100 dark:border-gray-800 bg-gray-50/60 dark:bg-white/[0.02]">
+        <h3 className="font-semibold text-[15px] sm:text-[16px] text-gray-900 dark:text-white">
           {data.title || "Let me help you find the right information"}
         </h3>
         {data.description && (
-          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1.5 leading-relaxed">{data.description}</p>
+          <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm mt-1.5 leading-relaxed">{data.description}</p>
         )}
       </div>
       
       {/* Form Questions */}
-      <div className="p-5 space-y-7">
+      <div className="p-4 sm:p-5 space-y-5 sm:space-y-7">
         {data.questions.map((q, idx) => (
           <div key={q.id || idx}>
-            <label className="block font-medium text-[14px] text-gray-800 dark:text-gray-200 mb-2.5">
+            <label className="block font-medium text-[13.5px] sm:text-[14px] text-gray-800 dark:text-gray-200 mb-2">
               {q.label}
               {q.optional && <span className="text-gray-400 dark:text-gray-500 font-normal text-xs ml-1">(optional)</span>}
             </label>

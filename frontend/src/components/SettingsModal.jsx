@@ -130,52 +130,52 @@ function SettingsModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 sm:p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-6">
       {/* Modal Container */}
-      <div className="w-full max-w-[720px] h-[85vh] max-h-[720px] flex flex-col bg-[#f3f4f6] dark:bg-[#0b0f19] rounded-[32px] shadow-2xl overflow-hidden border border-gray-200 dark:border-white/5">
+      <div className="w-full max-w-[720px] h-[92vh] sm:h-[85vh] max-h-[720px] flex flex-col bg-[#f3f4f6] dark:bg-[#0b0f19] rounded-[24px] sm:rounded-[32px] shadow-2xl overflow-hidden border border-gray-200 dark:border-white/10">
         
         {/* Header */}
-        <div className="flex items-center justify-between px-8 pt-8 pb-4 flex-shrink-0">
-          <h2 className="text-[20px] font-semibold text-gray-900 dark:text-white tracking-tight">Settings</h2>
-          <button onClick={onClose} className="text-gray-500 dark:text-[#a3a3a3] hover:text-gray-900 dark:hover:text-white transition-colors">
+        <div className="flex items-center justify-between px-5 sm:px-8 pt-5 sm:pt-8 pb-3 sm:pb-4 flex-shrink-0">
+          <h2 className="text-[18px] sm:text-[20px] font-semibold text-gray-900 dark:text-white tracking-tight">Settings</h2>
+          <button onClick={onClose} className="text-gray-500 dark:text-[#a3a3a3] hover:text-gray-900 dark:hover:text-white p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
             <X size={20} strokeWidth={2} />
           </button>
         </div>
 
         {/* Body */}
-        <div className="flex flex-1 overflow-hidden px-6 pb-6 gap-6">
+        <div className="flex flex-col md:flex-row flex-1 overflow-hidden px-3 sm:px-6 pb-3 sm:pb-6 gap-3 sm:gap-6">
           
-          {/* Sidebar */}
-          <div className="w-[180px] flex-shrink-0 flex flex-col gap-1 py-2 overflow-y-auto custom-scrollbar">
+          {/* Tabs - Horizontal on mobile, vertical on desktop */}
+          <div className="w-full md:w-[180px] flex-shrink-0 flex flex-row md:flex-col gap-1 py-1 sm:py-2 overflow-x-auto md:overflow-y-auto custom-scrollbar border-b md:border-b-0 border-gray-200 dark:border-white/10 pb-2 md:pb-0">
             {SIDEBAR_ITEMS.map((item) => (
               <button
                 key={item.id}
                 onClick={() => !item.isExternal && setActiveTab(item.id)}
-                className={`flex items-center justify-between px-4 py-2.5 rounded-2xl text-[14px] transition-colors text-left ${
+                className={`flex items-center justify-between px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl text-[13px] sm:text-[14px] transition-colors whitespace-nowrap text-left ${
                   activeTab === item.id && !item.isExternal
                     ? 'bg-gray-200 dark:bg-white/10 font-semibold text-gray-900 dark:text-white'
                     : 'text-gray-700 dark:text-[#cfcfcf] hover:bg-black/5 dark:hover:bg-white/5 font-medium'
                 }`}
               >
                 <span>{item.label}</span>
-                {item.isExternal && <ExternalLink size={14} strokeWidth={2} className="opacity-60" />}
+                {item.isExternal && <ExternalLink size={14} strokeWidth={2} className="opacity-60 ml-2" />}
               </button>
             ))}
           </div>
 
           {/* Content Area */}
-          <div className="flex-1 bg-white/80 dark:bg-[#14141c]/80 rounded-[24px] shadow-sm overflow-visible flex flex-col backdrop-blur-xl relative">
+          <div className="flex-1 bg-white/80 dark:bg-[#14141c]/80 rounded-[20px] sm:rounded-[24px] shadow-sm overflow-y-auto flex flex-col backdrop-blur-xl relative custom-scrollbar">
             
             {/* Sticky Header */}
-            <div className="sticky top-0 z-10 pt-8 px-8 bg-white/95 dark:bg-[#14141c]/95 backdrop-blur-xl">
-              <div className="pb-4 border-b border-gray-200 dark:border-white/10">
-                <h3 className="text-[18px] font-semibold text-gray-900 dark:text-white tracking-tight capitalize">
+            <div className="sticky top-0 z-10 pt-4 sm:pt-8 px-4 sm:px-8 bg-white/95 dark:bg-[#14141c]/95 backdrop-blur-xl">
+              <div className="pb-3 sm:pb-4 border-b border-gray-200 dark:border-white/10">
+                <h3 className="text-[16px] sm:text-[18px] font-semibold text-gray-900 dark:text-white tracking-tight capitalize">
                   {activeTab}
                 </h3>
               </div>
             </div>
 
-            <div className="flex-1 overflow-visible p-8 pt-6">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-8 pt-4 sm:pt-6">
               
               {activeTab === 'preferences' && (
                 <div className="flex flex-col max-w-[550px]">

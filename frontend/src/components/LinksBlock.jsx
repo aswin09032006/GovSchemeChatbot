@@ -44,8 +44,11 @@ function RichHoverCard({ children, popupContent }) {
       {children}
       {isVisible && createPortal(
         <div 
-          style={{ top: coords.top, left: coords.left }}
-          className="fixed z-[10000] min-w-[200px] max-w-[320px] bg-[#2a2a2a] text-white p-3 rounded-2xl shadow-2xl border border-white/10 animate-in fade-in zoom-in-95 duration-100 pointer-events-auto"
+          style={{ 
+            top: coords.top, 
+            left: Math.max(10, Math.min(window.innerWidth - 310, coords.left)) 
+          }}
+          className="fixed z-[10000] min-w-[200px] max-w-[calc(100vw-20px)] sm:max-w-[320px] bg-[#2a2a2a] text-white p-3 rounded-2xl shadow-2xl border border-white/10 animate-in fade-in zoom-in-95 duration-100 pointer-events-auto"
           onMouseEnter={() => { if (timeoutRef.current) clearTimeout(timeoutRef.current); setIsVisible(true); }}
           onMouseLeave={hidePopup}
         >

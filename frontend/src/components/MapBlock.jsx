@@ -44,24 +44,24 @@ export default function MapBlock({ data }) {
   };
 
   return (
-    <div className={`w-full my-4 rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161821] shadow-lg shadow-black/5 overflow-hidden transition-all duration-300 ${isExpanded ? 'ring-2 ring-emerald-500/50' : ''}`}>
+    <div className={`w-full max-w-full my-4 rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161821] shadow-lg shadow-black/5 overflow-hidden transition-all duration-300 min-w-0 ${isExpanded ? 'ring-2 ring-emerald-500/50' : ''}`}>
       {/* Header */}
-      <div className="px-5 py-3.5 bg-gradient-to-r from-gray-50 via-white to-gray-50 dark:from-[#1b1e2a] dark:via-[#161821] dark:to-[#1b1e2a] border-b border-gray-150 dark:border-white/10 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-inner">
+      <div className="px-3 sm:px-5 py-3 sm:py-3.5 bg-gradient-to-r from-gray-50 via-white to-gray-50 dark:from-[#1b1e2a] dark:via-[#161821] dark:to-[#1b1e2a] border-b border-gray-150 dark:border-white/10 flex items-center justify-between gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-inner shrink-0">
             <Compass className="w-4 h-4 animate-spin-slow" />
           </div>
-          <div>
-            <h4 className="text-[14.5px] font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              {data.title || "Nearby Service Centers & Offices"}
+          <div className="min-w-0 flex-1">
+            <h4 className="text-[13.5px] sm:text-[14.5px] font-semibold text-gray-900 dark:text-white flex items-center gap-1.5 truncate">
+              <span className="truncate">{data.title || "Nearby Service Centers & Offices"}</span>
               {places.length > 0 && (
-                <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
-                  {places.length} {places.length === 1 ? 'place' : 'places'}
+                <span className="text-[10px] sm:text-[11px] font-medium px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 shrink-0">
+                  {places.length}
                 </span>
               )}
             </h4>
             {activePlace?.name && (
-              <p className="text-[12px] text-gray-500 dark:text-gray-400 truncate max-w-[280px] sm:max-w-[400px]">
+              <p className="text-[11px] sm:text-[12px] text-gray-500 dark:text-gray-400 truncate">
                 Active: <span className="font-medium text-gray-700 dark:text-gray-300">{activePlace.name}</span>
               </p>
             )}
@@ -69,7 +69,7 @@ export default function MapBlock({ data }) {
         </div>
 
         {/* View Mode & Actions Toolbar */}
-        <div className="flex items-center gap-1.5 ml-auto">
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
           {places.length > 1 && (
             <div className="hidden sm:flex items-center p-0.5 bg-gray-100 dark:bg-white/5 rounded-lg border border-gray-200/80 dark:border-white/5 text-[12px]">
               <button
@@ -100,17 +100,17 @@ export default function MapBlock({ data }) {
             href={directionsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[12.5px] font-medium shadow-sm transition-all hover:shadow hover:scale-[1.02] active:scale-[0.98]"
+            className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[12px] sm:text-[12.5px] font-medium shadow-sm transition-all shrink-0"
             title="Get Turn-by-Turn Directions"
           >
             <Navigation className="w-3.5 h-3.5" />
-            <span>Directions</span>
+            <span className="hidden xs:inline sm:inline">Directions</span>
           </a>
 
           <button
             type="button"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="p-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+            className="p-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors shrink-0"
             title={isExpanded ? "Collapse map height" : "Expand map height"}
           >
             {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}

@@ -28,22 +28,33 @@ function AuthView({ onLogin }) {
     try {
       const endpoint = isLogin ? `${API_URL}/login` : `${API_URL}/register`;
       const payload = isLogin 
-        ? { email: formData.email, password: formData.password }
-        : formData;
+        ? { email: formData.email.trim(), password: formData.password }
+        : {
+            firstName: formData.firstName.trim(),
+            lastName: formData.lastName.trim(),
+            email: formData.email.trim(),
+            password: formData.password
+          };
 
       const res = await axios.post(endpoint, payload);
       const { token, user } = res.data;
       
       onLogin(token, user);
     } catch (err) {
-      setError(err.response?.data?.message || 'An error occurred. Please try again.');
+      if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else if (err.code === 'ERR_NETWORK') {
+        setError('Cannot connect to the server. Please ensure the backend is running on port 5000.');
+      } else {
+        setError('An error occurred. Please check your credentials and try again.');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex h-screen w-full bg-[#f3f4f6] dark:bg-[#0b0f19] text-gray-900 dark:text-[#e7e7e7] overflow-hidden p-3 gap-3">
+    <div className="flex h-screen w-full bg-[#f3f4f6] dark:bg-[#0b0f19] text-gray-900 dark:text-[#e7e7e7] overflow-y-auto md:overflow-hidden p-0 sm:p-3 gap-0 md:gap-3">
       
       {/* Left Side - Hero / Image */}
       <div className="relative hidden md:flex flex-col w-[55%] lg:w-[60%] rounded-[24px] overflow-hidden bg-black p-12 justify-center items-center">
@@ -66,12 +77,12 @@ function AuthView({ onLogin }) {
       </div>
 
       {/* Right Side - Form */}
-      <div className="flex-1 md:w-[45%] lg:w-[40%] flex flex-col justify-center items-center bg-[#f3f4f6] dark:bg-[#0b0f19] p-8">
+      <div className="flex-1 w-full md:w-[45%] lg:w-[40%] flex flex-col justify-center items-center bg-[#f3f4f6] dark:bg-[#0b0f19] px-4 py-8 sm:p-8">
         <div className="w-full max-w-[420px]">
           <h2 className="text-2xl font-semibold mb-2 text-center text-gray-900 dark:text-white">
             {isLogin ? 'Log In to Account' : 'Sign Up Account'}
           </h2>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mb-8 text-center">
+          <p className="text-gray-500 dark:text-gray-400 text-sm mb-6 sm:mb-8 text-center">
             {isLogin ? 'Enter your credentials to access your account.' : 'Enter your personal data to create your account.'}
           </p>
 
@@ -84,7 +95,7 @@ function AuthView({ onLogin }) {
             )}
 
             {!isLogin && (
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <div className="flex-1 flex flex-col gap-1.5">
                   <label className="text-[13px] text-gray-700 dark:text-gray-300 font-medium">First Name</label>
                   <input

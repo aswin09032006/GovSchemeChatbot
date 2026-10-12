@@ -20,21 +20,21 @@ function HomeView({
 
   return (
     <div className="w-full h-full relative flex flex-col">
-      <div className="w-full flex flex-col items-center my-auto py-6">
-        <h1 className="text-[30px] font-semibold text-gray-900 dark:text-white tracking-[-0.01em] drop-shadow-md">
+      <div className="w-full flex flex-col items-center my-auto py-4 sm:py-6 px-3 sm:px-6">
+        <h1 className="text-[22px] sm:text-[30px] font-semibold text-gray-900 dark:text-white tracking-[-0.01em] drop-shadow-md text-center px-2 leading-tight sm:leading-normal">
           Hi {firstName}, what should we dive into today?
         </h1>
 
         <form
           onSubmit={handleSend}
-          className="w-full max-w-[750px] bg-white/80 dark:bg-[#14141c]/80 shadow-2xl rounded-[32px] p-3 flex flex-col border border-gray-200 dark:border-white/[0.08] focus-within:border-gray-400 dark:focus-within:border-white/20 transition-all mt-4">
-          <div className="flex-1 flex flex-col mb-12">
+          className="w-full max-w-[750px] bg-white/80 dark:bg-[#14141c]/80 shadow-2xl rounded-[24px] sm:rounded-[32px] p-3 flex flex-col border border-gray-200 dark:border-white/[0.08] focus-within:border-gray-400 dark:focus-within:border-white/20 transition-all mt-4">
+          <div className="flex-1 flex flex-col mb-6 sm:mb-12">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask anything..."
-              className="w-full px-3 py-1 outline-none text-[15px] bg-transparent text-gray-900 dark:text-[#e7e7e7] placeholder-gray-500 dark:placeholder-[#8a8a8f]"
+              className="w-full px-3 py-1 outline-none text-[15px] sm:text-[15px] bg-transparent text-gray-900 dark:text-[#e7e7e7] placeholder-gray-500 dark:placeholder-[#8a8a8f]"
               disabled={isLoading}
             />
           </div>
@@ -73,23 +73,23 @@ function HomeView({
         </form>
 
       {/* Suggestion Chips */}
-      <div className="flex flex-col items-center mt-6 gap-2 w-full max-w-[800px]">
-        <div className="flex justify-center flex-wrap gap-2">
+      <div className="flex flex-col items-center mt-5 sm:mt-6 gap-2 w-full max-w-[800px] px-1 sm:px-0">
+        <div className="flex justify-center flex-wrap gap-1.5 sm:gap-2">
           {ROW_ONE_CHIPS.map((chip) => (
             <button
               key={chip}
               onClick={(e) => handleSend(e, chip)}
-              className="px-4 py-2 rounded-full border border-gray-200 dark:border-white/10 bg-white/70 dark:bg-black/30 hover:bg-white/90 dark:hover:bg-white/5 text-[13px] text-gray-800 dark:text-[#e7e7e7] shadow-sm backdrop-blur-md transition-all whitespace-nowrap font-medium">
+              className="px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full border border-gray-200 dark:border-white/10 bg-white/70 dark:bg-black/30 hover:bg-white/90 dark:hover:bg-white/5 text-[12px] sm:text-[13px] text-gray-800 dark:text-[#e7e7e7] shadow-sm backdrop-blur-md transition-all whitespace-normal text-left sm:text-center sm:whitespace-nowrap font-medium">
               {chip}
             </button>
           ))}
         </div>
-        <div className="flex justify-center flex-wrap gap-2">
+        <div className="flex justify-center flex-wrap gap-1.5 sm:gap-2">
           {ROW_TWO_CHIPS.map((chip) => (
             <button
               key={chip}
               onClick={(e) => handleSend(e, chip)}
-              className="px-4 py-2 rounded-full border border-gray-200 dark:border-white/10 bg-white/70 dark:bg-black/30 hover:bg-white/90 dark:hover:bg-white/5 text-[13px] text-gray-800 dark:text-[#e7e7e7] shadow-sm backdrop-blur-md transition-all whitespace-nowrap font-medium">
+              className="px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full border border-gray-200 dark:border-white/10 bg-white/70 dark:bg-black/30 hover:bg-white/90 dark:hover:bg-white/5 text-[12px] sm:text-[13px] text-gray-800 dark:text-[#e7e7e7] shadow-sm backdrop-blur-md transition-all whitespace-normal text-left sm:text-center sm:whitespace-nowrap font-medium">
               {chip}
             </button>
           ))}
@@ -97,9 +97,9 @@ function HomeView({
       </div>
 
       {/* Cards Area */}
-      <div className="flex gap-4 w-full max-w-[800px] mt-14 mb-4">
+      <div className="flex flex-col md:flex-row gap-4 w-full max-w-[800px] mt-8 sm:mt-14 mb-4 px-1 sm:px-0">
         {/* Left Card: Popular Schemes */}
-        <div className="flex-1 rounded-[24px] border border-gray-200 dark:border-white/10 bg-white/80 dark:bg-[#14141c]/60 backdrop-blur-xl p-4 flex flex-col gap-4 min-h-[220px]">
+        <div className="w-full md:flex-1 rounded-[24px] border border-gray-200 dark:border-white/10 bg-white/80 dark:bg-[#14141c]/60 backdrop-blur-xl p-4 flex flex-col gap-4 min-h-[220px]">
           <div className="flex items-center justify-between px-2 pt-1">
             <div className="flex items-center gap-2">
               <Landmark
@@ -148,7 +148,7 @@ function HomeView({
         </div>
 
         {/* Right Card: Recent Chats */}
-        <div className="flex-1 rounded-[24px] border border-gray-200 dark:border-white/10 bg-white/80 dark:bg-[#14141c]/60 backdrop-blur-xl p-4 flex flex-col gap-4 min-h-[220px]">
+        <div className="w-full md:flex-1 rounded-[24px] border border-gray-200 dark:border-white/10 bg-white/80 dark:bg-[#14141c]/60 backdrop-blur-xl p-4 flex flex-col gap-4 min-h-[220px]">
           <div className="flex items-center justify-between px-2 pt-1">
             <div className="flex items-center gap-2">
               <MessageSquare

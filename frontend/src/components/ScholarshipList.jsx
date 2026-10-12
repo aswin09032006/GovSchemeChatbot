@@ -87,9 +87,9 @@ const SchemeCard = ({ item, idx }) => {
   };
 
   return (
-    <div className="flex flex-col sm:flex-row gap-4 p-4 rounded-2xl bg-gray-50 dark:bg-[#1a1a1f] border border-gray-200 dark:border-white/[0.04] transition-all hover:bg-gray-100 dark:hover:bg-[#1e1e24]">
+    <div className="flex flex-col sm:flex-row gap-3.5 sm:gap-4 p-3 sm:p-4 rounded-2xl bg-gray-50 dark:bg-[#1a1a1f] border border-gray-200 dark:border-white/[0.04] transition-all hover:bg-gray-100 dark:hover:bg-[#1e1e24] w-full min-w-0 overflow-hidden">
       {/* Cover Image Frame */}
-      <div className="flex-shrink-0 w-full sm:w-[180px] h-[130px] rounded-xl overflow-hidden bg-gray-200 dark:bg-black/30 flex items-center justify-center relative shadow-sm border border-black/5 dark:border-white/[0.02]">
+      <div className="flex-shrink-0 w-full sm:w-[180px] h-[150px] sm:h-[130px] rounded-xl overflow-hidden bg-gray-200 dark:bg-black/30 flex items-center justify-center relative shadow-sm border border-black/5 dark:border-white/[0.02]">
         {loading ? (
           <div className="flex flex-col items-center justify-center text-gray-400 gap-2">
             <Loader2 className="w-5 h-5 animate-spin text-gray-500" />
@@ -109,10 +109,10 @@ const SchemeCard = ({ item, idx }) => {
       </div>
 
       {/* Details Section */}
-      <div className="flex flex-col justify-start w-full py-0.5">
+      <div className="flex flex-col justify-start w-full min-w-0 py-0.5">
         <div>
           {/* Title */}
-          <h4 className="font-bold text-[16px] text-gray-900 dark:text-gray-100 leading-snug mb-1.5">
+          <h4 className="font-bold text-[15px] sm:text-[16px] text-gray-900 dark:text-gray-100 leading-snug mb-1.5 break-words">
             {idx + 1}. {item.title}
           </h4>
 
@@ -178,7 +178,7 @@ export default function ScholarshipList({ data }) {
   if (!data || !Array.isArray(data)) return null;
 
   return (
-    <div className="w-full flex flex-col gap-10 mt-6 mb-6">
+    <div className="w-full max-w-full flex flex-col gap-5 sm:gap-8 my-4 min-w-0">
       {data.map((item, idx) => (
         <SchemeCard key={idx} item={item} idx={idx} />
       ))}

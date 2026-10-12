@@ -68,7 +68,7 @@ function ChatView({ messages, messagesEndRef, handleSend, input, setInput, isLoa
 
   const handleDownloadPDF = async (formData) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('govSchemeAuthToken') || localStorage.getItem('token');
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
       const response = await fetch(`${apiUrl}/api/form/generate`, {
         method: 'POST',
@@ -98,20 +98,19 @@ function ChatView({ messages, messagesEndRef, handleSend, input, setInput, isLoa
 
   return (
     <div className="w-full h-full relative">
-      <div className="w-full h-full overflow-y-auto pt-8 pb-40 px-4 custom-scrollbar flex flex-col items-center">
-        <div className="w-full max-w-[800px] flex flex-col">
+      <div className="w-full h-full overflow-y-auto pt-3 sm:pt-8 pb-32 sm:pb-40 px-2.5 sm:px-4 custom-scrollbar flex flex-col items-center">
+        <div className="w-full max-w-[800px] flex flex-col min-w-0">
           {messages.map((msg, index) => (
-            <div key={index} className={`flex w-full mb-8 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              {msg.role === 'assistant' && (
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center mr-4 mt-1 flex-shrink-0">
-                  <img src={logoImg} alt="AI Logo" className="w-7 h-7 object-contain rounded-md" />
-                </div>
-              )}
+            <div key={index} className={`w-full mb-6 sm:mb-8 ${msg.role === 'user' ? 'flex justify-end' : 'flex flex-col sm:flex-row items-start gap-2 sm:gap-3.5'}`}>
+              {msg.role === 'assistant' ? (
+                <>
+                  <div className="flex items-center gap-2 sm:block sm:w-8 sm:h-8 rounded-lg flex-shrink-0 pt-0.5">
+                    <img src={logoImg} alt="AI Logo" className="w-5 h-5 sm:w-7 sm:h-7 object-contain rounded-md" />
+                    <span className="sm:hidden text-xs font-semibold text-gray-700 dark:text-gray-300">PolicyPilot</span>
+                  </div>
 
-              <div className={`max-w-[85%] text-[15px] leading-relaxed ${msg.role === 'user' ? 'bg-gray-200 dark:bg-white/10 px-5 py-3 rounded-2xl rounded-tr-sm text-gray-900 dark:text-[#eee]' : 'text-gray-800 dark:text-[#d1d1d1]'}`}>
-                {msg.role === 'assistant' ? (
-                  <div className="flex flex-col">
-                    <div className="flex flex-col w-full gap-4">
+                  <div className="w-full min-w-0 text-[14.5px] sm:text-[15px] leading-relaxed break-words text-gray-800 dark:text-[#d1d1d1]">
+                    <div className="flex flex-col w-full min-w-0 gap-4">
                       {parseMessageBlocks(msg.content).map((block, bIdx) => {
                         if (block.type === 'markdown') {
                           return (
@@ -268,22 +267,25 @@ function ChatView({ messages, messagesEndRef, handleSend, input, setInput, isLoa
                       </div>
                     )}
                   </div>
-                ) : (
-                  <div>{msg.content}</div>
-                )}
-              </div>
+                </>
+              ) : (
+                <div className="max-w-[88%] sm:max-w-[80%] text-[14.5px] sm:text-[15px] leading-relaxed break-words bg-gray-200 dark:bg-white/10 px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl rounded-tr-sm text-gray-900 dark:text-[#eee]">
+                  {msg.content}
+                </div>
+              )}
             </div>
           ))}
           
           {isLoading && (
-            <div className="flex w-full mb-8 justify-start">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center mr-4 mt-1 flex-shrink-0">
-                <img src={logoImg} alt="AI Logo" className="w-7 h-7 object-contain rounded-md" />
+            <div className="w-full mb-6 sm:mb-8 flex flex-col sm:flex-row items-start gap-2 sm:gap-3.5">
+              <div className="flex items-center gap-2 sm:block sm:w-8 sm:h-8 rounded-lg flex-shrink-0 pt-0.5">
+                <img src={logoImg} alt="AI Logo" className="w-5 h-5 sm:w-7 sm:h-7 object-contain rounded-md" />
+                <span className="sm:hidden text-xs font-semibold text-gray-700 dark:text-gray-300">PolicyPilot</span>
               </div>
-              <div className="max-w-[85%] text-[15px] leading-relaxed text-gray-800 dark:text-[#d1d1d1] flex items-center gap-1.5 pt-2">
-                <div className="w-1.5 h-1.5 bg-gray-500 dark:bg-[#888] rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                <div className="w-1.5 h-1.5 bg-gray-500 dark:bg-[#888] rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                <div className="w-1.5 h-1.5 bg-gray-500 dark:bg-[#888] rounded-full animate-bounce"></div>
+              <div className="text-[15px] leading-relaxed text-gray-800 dark:text-[#d1d1d1] flex items-center gap-1.5 pt-1 pl-1 sm:pl-0">
+                <div className="w-2 h-2 bg-gray-500 dark:bg-[#888] rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                <div className="w-2 h-2 bg-gray-500 dark:bg-[#888] rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                <div className="w-2 h-2 bg-gray-500 dark:bg-[#888] rounded-full animate-bounce"></div>
               </div>
             </div>
           )}
@@ -292,36 +294,36 @@ function ChatView({ messages, messagesEndRef, handleSend, input, setInput, isLoa
         </div>
       </div>
 
-      <div className="w-full absolute bottom-0 left-0 flex justify-center px-4 bg-gradient-to-t from-[#f3f4f6] dark:from-[#0b0f19] via-[#f3f4f6]/90 dark:via-[#0b0f19]/90 to-transparent pt-20 pb-8 rounded-b-[20px] pointer-events-none">
+      <div className="w-full absolute bottom-0 left-0 flex justify-center px-2 sm:px-4 bg-gradient-to-t from-[#f3f4f6] dark:from-[#0b0f19] via-[#f3f4f6]/95 dark:via-[#0b0f19]/95 to-transparent pt-10 sm:pt-20 pb-3 sm:pb-8 rounded-b-none md:rounded-b-[20px] pointer-events-none">
         <form
           onSubmit={handleSend}
-          className="w-full max-w-[750px] bg-white/90 dark:bg-[#14141c]/90 shadow-2xl rounded-3xl p-3 flex flex-col border border-gray-200 dark:border-white/[0.08] focus-within:border-gray-400 dark:focus-within:border-white/20 transition-all pointer-events-auto"
+          className="w-full max-w-[750px] bg-white/95 dark:bg-[#14141c]/95 shadow-2xl rounded-2xl sm:rounded-3xl p-2.5 sm:p-3 flex flex-col border border-gray-200 dark:border-white/[0.08] focus-within:border-gray-400 dark:focus-within:border-white/20 transition-all pointer-events-auto"
         >
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask a follow-up question..."
-            className="w-full px-3 py-1 mb-3 outline-none text-[15px] bg-transparent text-gray-900 dark:text-[#e7e7e7] placeholder-gray-500 dark:placeholder-[#8a8a8f]"
+            className="w-full px-2.5 sm:px-3 py-1 mb-2 sm:mb-3 outline-none text-[15px] sm:text-[15px] bg-transparent text-gray-900 dark:text-[#e7e7e7] placeholder-gray-500 dark:placeholder-[#8a8a8f]"
             disabled={isLoading}
           />
           <div className="flex items-center justify-between w-full px-1">
             <div className="flex items-center gap-1">
               <Tooltip text="Attach File (Coming Soon)" delay={500}>
-                <button type="button" className="p-2 text-gray-600 dark:text-[#cfcfcf] hover:text-gray-900 dark:hover:text-white rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+                <button type="button" className="p-1.5 sm:p-2 text-gray-600 dark:text-[#cfcfcf] hover:text-gray-900 dark:hover:text-white rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
                   <Plus size={18} strokeWidth={2} />
                 </button>
               </Tooltip>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <Tooltip text={isListening ? "Stop Voice Input" : "Start Voice Input"} delay={500}>
-                <button onClick={toggleListening} type="button" className={`p-2 rounded-full transition-colors ${isListening ? 'text-red-500 bg-red-100 dark:bg-red-500/20' : 'text-gray-600 dark:text-[#cfcfcf] hover:text-gray-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10'}`}>
+                <button onClick={toggleListening} type="button" className={`p-1.5 sm:p-2 rounded-full transition-colors ${isListening ? 'text-red-500 bg-red-100 dark:bg-red-500/20' : 'text-gray-600 dark:text-[#cfcfcf] hover:text-gray-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10'}`}>
                   <AudioLines size={18} strokeWidth={2} />
                 </button>
               </Tooltip>
               {input.trim() && (
                 <Tooltip text="Send Message" delay={500}>
-                  <button type="submit" disabled={isLoading} className="w-8 h-8 bg-[#4D6285] dark:bg-[#5C7399] text-white flex items-center justify-center rounded-[10px] hover:bg-[#3D5275] dark:hover:bg-[#6C83A9] transition-colors disabled:opacity-50 ml-2">
+                  <button type="submit" disabled={isLoading} className="w-8 h-8 bg-[#4D6285] dark:bg-[#5C7399] text-white flex items-center justify-center rounded-[10px] hover:bg-[#3D5275] dark:hover:bg-[#6C83A9] transition-colors disabled:opacity-50 ml-1 sm:ml-2">
                     <ArrowUp size={16} strokeWidth={2.5} />
                   </button>
                 </Tooltip>
