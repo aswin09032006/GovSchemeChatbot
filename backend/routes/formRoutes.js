@@ -1,99 +1,176 @@
 import express from 'express';
 import PDFDocument from 'pdfkit';
-import { authenticateToken } from '../middleware/auth.js';
+import jwt from 'jsonwebtoken';
 
 const router = express.Router();
 
-router.use(authenticateToken);
+// Optional authentication: extracts user if valid token exists, but doesn't block download if missing
+router.use((req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'gov_scheme_chatbot_jwt_super_secret_key_2026_secure');
+      req.user = decoded;
+    } catch {
+      // Continue even if token is expired or signed by another instance
+    }
+  }
+  next();
+});
 
 router.post('/generate', async (req, res) => {
   try {
-    const { schemeName, data } = req.body;
+    const rawBody = req.body || {};
+    // Extract nested or flat form data flexibly
+    const data = (rawBody.data && typeof rawBody.data === 'object') ? rawBody.data : rawBody;
+    const schemeName = rawBody.schemeName || data.schemeName || rawBody.scheme || data.scheme || 'Government Welfare Scheme';
 
-    if (!data) {
+    if (!data || (typeof data !== 'object')) {
       return res.status(400).json({ error: 'Form data is required' });
     }
 
+    const appId = `APP-${Date.now().toString(36).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const today = new Date().toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+
     // Create a new PDF document
-    const doc = new PDFDocument({ margin: 50 });
+    const doc = new PDFDocument({ margin: 40, size: 'A4' });
     
     // Set response headers for PDF download
+    const cleanSchemeName = schemeName.replace(/[^a-zA-Z0-9_\s-]/g, '').trim().replace(/\s+/g, '_') || 'Application';
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename=Application_${schemeName ? schemeName.replace(/\s+/g, '_') : 'Form'}.pdf`);
+    res.setHeader('Content-Disposition', `attachment; filename="Application_${cleanSchemeName}.pdf"`);
 
     // Pipe the PDF into the response
     doc.pipe(res);
 
     // --- Draw PDF Content ---
+    const pageWidth = doc.page.width;
     
-    // Header
-    doc.rect(0, 0, doc.page.width, 100).fill('#f0f4f8');
-    doc.fillColor('#1a202c')
-       .fontSize(24)
+    // Top Decorative Bar
+    doc.rect(0, 0, pageWidth, 8).fill('#059669'); // Emerald green accent
+    
+    // Header Banner
+    doc.rect(0, 8, pageWidth, 80).fill('#f8fafc');
+    doc.fillColor('#0f172a')
+       .fontSize(20)
        .font('Helvetica-Bold')
-       .text('Government Scheme Application Form', 0, 40, { align: 'center' });
-       
-    doc.moveDown(2);
+       .text('Government of India / State Welfare Portal', 40, 24, { align: 'center' });
+    
+    doc.fillColor('#475569')
+       .fontSize(11)
+       .font('Helvetica')
+       .text('Citizen Application & Registration Form', 40, 52, { align: 'center' });
 
-    // Scheme Name
-    doc.fontSize(18)
+    // Scheme Name Banner
+    doc.roundedRect(40, 105, pageWidth - 80, 50, 6)
+       .fillAndStroke('#eff6ff', '#bfdbfe');
+       
+    doc.fillColor('#1e40af')
+       .fontSize(14)
        .font('Helvetica-Bold')
-       .fillColor('#2d3748')
-       .text(`Scheme: ${schemeName || 'General Welfare Scheme'}`, 50, 120);
+       .text(`Scheme: ${schemeName}`, 55, 116, { width: pageWidth - 110 });
        
-    doc.moveTo(50, 145).lineTo(550, 145).strokeColor('#e2e8f0').stroke();
-    
-    doc.moveDown(2);
+    doc.fillColor('#64748b')
+       .fontSize(9)
+       .font('Helvetica')
+       .text(`Application Ref: ${appId}   |   Date Generated: ${today}`, 55, 137);
 
-    // Form Data Sections
-    const startY = 170;
-    const lineSpacing = 30;
-    
+    // Section Title: Applicant Details
+    let currentY = 175;
+    doc.fillColor('#0f172a')
+       .fontSize(12)
+       .font('Helvetica-Bold')
+       .text('1. APPLICANT DETAILS', 40, currentY);
+       
+    doc.moveTo(40, currentY + 16).lineTo(pageWidth - 40, currentY + 16).strokeColor('#cbd5e1').stroke();
+    currentY += 28;
+
+    // Build fields list
     const fields = [
-      { label: 'Full Name', value: data.name },
-      { label: 'Age', value: data.age },
-      { label: 'Address', value: data.address },
-      { label: 'Aadhaar Number', value: data.aadhaar },
-      { label: 'Annual Income', value: data.income },
+      { label: 'Full Name', value: data.name || data.fullName || data.applicantName || 'Not Specified' },
+      { label: 'Age / DOB', value: data.age ? `${data.age} years` : (data.dob || 'Not Specified') },
+      { label: 'Gender', value: data.gender || 'Not Specified' },
+      { label: 'Mobile Number', value: data.phone || data.mobile || data.contact || 'Not Specified' },
+      { label: 'Aadhaar / ID No.', value: data.aadhaar || data.aadhar || data.idNumber || 'Not Specified' },
+      { label: 'Annual Family Income', value: data.income ? (data.income.toString().startsWith('₹') ? data.income : `₹ ${data.income}`) : 'Not Specified' },
+      { label: 'Occupation / Category', value: [data.occupation, data.category].filter(Boolean).join(' / ') || 'Not Specified' },
+      { label: 'Residential Address', value: [data.address, data.district, data.state, data.pincode].filter(Boolean).join(', ') || 'Not Specified' }
     ];
 
-    doc.fontSize(12).font('Helvetica');
-    
-    fields.forEach((field, i) => {
-      const y = startY + (i * lineSpacing);
-      
-      // Label
-      doc.font('Helvetica-Bold')
-         .fillColor('#4a5568')
-         .text(`${field.label}:`, 50, y);
-         
-      // Value Box
-      doc.rect(170, y - 5, 380, 20)
-         .fillAndStroke('#f7fafc', '#cbd5e0');
-         
-      // Value Text
-      doc.font('Helvetica')
-         .fillColor('#1a202c')
-         .text(field.value || 'N/A', 175, y - 1);
-    });
-    
-    // Declaration section
-    const declarationY = startY + (fields.length * lineSpacing) + 50;
-    
-    doc.font('Helvetica-Bold')
-       .fillColor('#2d3748')
-       .text('Declaration', 50, declarationY);
-       
-    doc.font('Helvetica')
-       .fontSize(10)
-       .fillColor('#4a5568')
-       .text('I hereby declare that all the information provided above is true and correct to the best of my knowledge.', 50, declarationY + 20, { width: 500, align: 'justify' });
+    // Filter fields to those relevant
+    fields.forEach((field) => {
+      // Row box
+      doc.roundedRect(40, currentY, pageWidth - 80, 26, 3)
+         .fillAndStroke('#ffffff', '#e2e8f0');
 
-    // Signature section
-    doc.rect(50, declarationY + 80, 200, 50).stroke();
-    doc.text('Applicant Signature', 100, declarationY + 140);
-    
-    doc.text('Date: _______________', 350, declarationY + 120);
+      // Label background
+      doc.roundedRect(40, currentY, 150, 26, 3)
+         .fill('#f1f5f9');
+
+      // Label text
+      doc.font('Helvetica-Bold')
+         .fontSize(9.5)
+         .fillColor('#334155')
+         .text(field.label, 50, currentY + 7);
+
+      // Value text
+      doc.font('Helvetica')
+         .fontSize(9.5)
+         .fillColor('#0f172a')
+         .text(String(field.value), 200, currentY + 7, { width: pageWidth - 250, ellipsis: true });
+
+      currentY += 32;
+    });
+
+    currentY += 15;
+
+    // Declaration section
+    doc.fillColor('#0f172a')
+       .fontSize(12)
+       .font('Helvetica-Bold')
+       .text('2. APPLICANT DECLARATION', 40, currentY);
+       
+    doc.moveTo(40, currentY + 16).lineTo(pageWidth - 40, currentY + 16).strokeColor('#cbd5e1').stroke();
+    currentY += 26;
+
+    doc.roundedRect(40, currentY, pageWidth - 80, 52, 4)
+       .fillAndStroke('#f8fafc', '#e2e8f0');
+
+    doc.font('Helvetica')
+       .fontSize(8.5)
+       .fillColor('#475568')
+       .text(
+         'I hereby declare that all the information and details provided by me in this application are true, complete, and correct to the best of my knowledge and belief. I understand that in the event of any information being found false, fraudulent, or incorrect at any stage, my application/registration shall stand cancelled and I may be liable for appropriate legal action as per applicable government rules.',
+         50,
+         currentY + 8,
+         { width: pageWidth - 100, align: 'justify', lineGap: 2 }
+       );
+
+    currentY += 75;
+
+    // Signatures and Dates
+    // Left Box: Date & Place
+    doc.roundedRect(40, currentY, 200, 70, 4).strokeColor('#cbd5e1').stroke();
+    doc.font('Helvetica-Bold').fontSize(9).fillColor('#334155').text('Application Filing Details', 50, currentY + 10);
+    doc.font('Helvetica').fontSize(9).fillColor('#475568')
+       .text(`Date: ${today}`, 50, currentY + 30)
+       .text('Place: _________________________', 50, currentY + 48);
+
+    // Right Box: Signature / Thumb Impression
+    doc.roundedRect(pageWidth - 240, currentY, 200, 70, 4).strokeColor('#cbd5e1').stroke();
+    doc.font('Helvetica').fontSize(8.5).fillColor('#94a3b8').text('(Affix Signature / Thumb Impression below)', pageWidth - 235, currentY + 8, { align: 'center', width: 190 });
+    doc.font('Helvetica-Bold').fontSize(9).fillColor('#334155').text('Signature of Applicant', pageWidth - 235, currentY + 52, { align: 'center', width: 190 });
+
+    // Footer notice
+    doc.font('Helvetica')
+       .fontSize(8)
+       .fillColor('#94a3b8')
+       .text('Note: This is an auto-generated pre-filled application form via PolicyPilot Citizen Welfare Assistant. Please submit this form along with required original document photocopies at your nearest Taluk Office, CSC, or designated E-Seva Centre.', 40, doc.page.height - 45, { width: pageWidth - 80, align: 'center' });
 
     // Finalize PDF file
     doc.end();

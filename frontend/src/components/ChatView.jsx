@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Plus, ArrowUp, AudioLines, Volume2, Square, Copy, Check, Bot, ChevronDown, ThumbsUp, ThumbsDown, RefreshCw } from 'lucide-react';
+import { Plus, ArrowUp, AudioLines, Volume2, Square, Copy, Check, Bot, ChevronDown, ThumbsUp, ThumbsDown, RefreshCw, FileText, Download, Loader2 } from 'lucide-react';
 import logoImg from '../assets/logo.png';
 import Tooltip from './Tooltip';
+import { generateClientPDF } from '../utils/pdfGenerator';
 
 import InteractiveForm from './InteractiveForm';
 import ScholarshipList from './ScholarshipList';
@@ -13,26 +14,69 @@ import MapBlock from './MapBlock';
 import { parse } from 'partial-json';
 
 const parseMessageBlocks = (content) => {
+  if (!content) return [];
   const jsonStart = content.indexOf('{');
   
   if (jsonStart !== -1) {
     const jsonStr = content.slice(jsonStart);
     try {
       const parsed = parse(jsonStr);
-      if (parsed && parsed.blocks && Array.isArray(parsed.blocks)) {
-        const preText = content.slice(0, jsonStart).trim();
-        const blocks = [...parsed.blocks];
-        
-        // If there was any text before the JSON (like tool status messages), add it as a markdown block first
-        if (preText) {
-          blocks.unshift({ type: 'markdown', content: preText });
+      if (parsed) {
+        // Case 1: Standard structured blocks schema
+        if (parsed.blocks && Array.isArray(parsed.blocks)) {
+          const preText = content.slice(0, jsonStart).trim();
+          const blocks = [...parsed.blocks];
+          
+          if (preText) {
+            blocks.unshift({ type: 'markdown', content: preText });
+          }
+          
+          return blocks;
         }
-        
-        return blocks;
+
+        // Case 2: FORM_COMPLETE top-level object
+        if (parsed.FORM_COMPLETE || parsed.form_complete) {
+          let preText = content.slice(0, jsonStart).trim();
+          preText = preText.replace(/```(?:json)?\s*$/i, '').trim();
+          const blocks = [];
+          if (preText) {
+            blocks.push({ type: 'markdown', content: preText });
+          }
+          blocks.push({
+            type: 'form_complete',
+            data: {
+              schemeName: parsed.schemeName || 'Government Scheme',
+              ...(parsed.data || parsed)
+            }
+          });
+          return blocks;
+        }
       }
     } catch (e) {
       // Fallback if parsing fails
     }
+  }
+
+  // Case 3: Markdown text containing an embedded ```json { "FORM_COMPLETE": true ... } ```
+  const formCompleteRegex = /```(?:json)?\s*(\{\s*[\s\S]*?"FORM_COMPLETE"[\s\S]*?\})\s*```/i;
+  const match = content.match(formCompleteRegex);
+  if (match) {
+    try {
+      const parsed = JSON.parse(match[1]);
+      const cleanContent = content.replace(formCompleteRegex, '').trim();
+      const blocks = [];
+      if (cleanContent) {
+        blocks.push({ type: 'markdown', content: cleanContent });
+      }
+      blocks.push({
+        type: 'form_complete',
+        data: {
+          schemeName: parsed.schemeName || 'Government Scheme',
+          ...(parsed.data || parsed)
+        }
+      });
+      return blocks;
+    } catch {}
   }
 
   // Fallback for raw text (e.g. user messages, errors, old messages)
@@ -57,6 +101,7 @@ const cleanMarkdownContent = (content) => {
 
 function ChatView({ messages, messagesEndRef, handleSend, input, setInput, isLoading, toggleListening, isListening, speakText, activeSpeechIndex, isStreaming, handleFeedback, handleRegenerate }) {
   const [copiedIndex, setCopiedIndex] = useState(null);
+  const [downloadingId, setDownloadingId] = useState(null);
 
   const handleCopy = (text, index) => {
     navigator.clipboard.writeText(text);
@@ -66,33 +111,62 @@ function ChatView({ messages, messagesEndRef, handleSend, input, setInput, isLoa
     }, 2000);
   };
 
-  const handleDownloadPDF = async (formData) => {
+  const handleDownloadPDF = async (formData, blockId = 'form') => {
+    setDownloadingId(blockId);
     try {
       const token = localStorage.getItem('govSchemeAuthToken') || localStorage.getItem('token');
-      const apiUrl = (import.meta.env.VITE_API_URL || 'https://policypilot-backend-cs2y.onrender.com').replace(/\/$/, '');
-      const response = await fetch(`${apiUrl}/api/form/generate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify(formData)
-      });
-      
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `Application_${formData.schemeName ? formData.schemeName.replace(/\s+/g, '_') : 'Form'}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-      } else {
-        console.error('Failed to download PDF');
+      const configuredApi = (import.meta.env.VITE_API_URL || 'https://policypilot-backend-cs2y.onrender.com').replace(/\/$/, '');
+      const localApi = (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
+        ? 'http://localhost:5000'
+        : null;
+
+      let downloaded = false;
+      const apisToTry = localApi ? [localApi, configuredApi] : [configuredApi];
+
+      for (const apiUrl of apisToTry) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+          const response = await fetch(`${apiUrl}/api/form/generate`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify(formData),
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+
+          if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const sName = formData.schemeName || (formData.data && formData.data.schemeName) || 'Form';
+            a.download = `Application_${sName.replace(/[^a-zA-Z0-9_\s-]/g, '').trim().replace(/\s+/g, '_')}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            downloaded = true;
+            break;
+          }
+        } catch {
+          // If endpoint fails or times out, proceed to next or fallback
+        }
+      }
+
+      // If network calls failed or returned non-200, generate instantly on client side
+      if (!downloaded) {
+        generateClientPDF(formData);
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error downloading PDF:', error);
+      generateClientPDF(formData);
+    } finally {
+      setDownloadingId(null);
     }
   };
 
@@ -192,17 +266,40 @@ function ChatView({ messages, messagesEndRef, handleSend, input, setInput, isLoa
                           return <MapBlock key={bIdx} data={block.data} />;
                         }
                         if (block.type === 'form_complete' && !(isStreaming && index === messages.length - 1)) {
+                          const schemeTitle = block.data?.schemeName || (block.data?.data && block.data.data.schemeName) || 'Welfare Scheme Application';
+                          const isCurrentDownloading = downloadingId === (schemeTitle || bIdx);
+
                           return (
-                            <div key={bIdx} className="p-4 border border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 rounded-xl flex items-center justify-between">
-                              <div>
-                                <div className="font-semibold text-blue-900 dark:text-blue-100">Application Form Ready</div>
-                                <div className="text-sm text-blue-700 dark:text-blue-300">Click below to download your pre-filled PDF.</div>
+                            <div key={bIdx} className="my-2 p-4 sm:p-5 border border-emerald-200 bg-emerald-50/70 dark:bg-emerald-950/20 dark:border-emerald-800/60 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+                              <div className="flex items-start gap-3.5">
+                                <div className="w-10 h-10 rounded-xl bg-emerald-600/10 dark:bg-emerald-500/20 flex items-center justify-center flex-shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5">
+                                  <FileText className="w-5 h-5" />
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="font-semibold text-[15px] text-gray-900 dark:text-white leading-snug">
+                                    {schemeTitle}
+                                  </div>
+                                  <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mt-1">
+                                    Pre-filled application form is ready. Official format with applicant details and declaration.
+                                  </div>
+                                </div>
                               </div>
                               <button 
-                                onClick={() => handleDownloadPDF(block.data)}
-                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+                                onClick={() => handleDownloadPDF(block.data, schemeTitle || bIdx)}
+                                disabled={isCurrentDownloading}
+                                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-600/60 text-white rounded-xl text-sm font-medium transition-all shadow-sm hover:shadow active:scale-[0.98] flex-shrink-0"
                               >
-                                Download PDF
+                                {isCurrentDownloading ? (
+                                  <>
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    <span>Generating PDF...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Download className="w-4 h-4" />
+                                    <span>Download PDF</span>
+                                  </>
+                                )}
                               </button>
                             </div>
                           );
