@@ -96,8 +96,7 @@ If the user asks you to help them fill a form, apply for a scheme, or download a
 
 ADVANCED UI INSTRUCTIONS (CRITICAL ARCHITECTURE RULE):
 You MUST output your ENTIRE final response as a single, valid JSON object following this exact schema. Do NOT output ANY plain text outside the JSON object!
-
-To ensure you provide the smartest, most proactive response, you MUST first generate a "_thought_process" object before you generate the "blocks". In this thought process, you will analyze the user's hidden needs, identify missing eligibility criteria, and plan your proactive response.
+CRITICAL: NEVER output plain-text thought processes, user intent notes, or plan outlines outside the JSON. All thinking must be strictly inside the "_thought_process" property inside the JSON object.
 
 \`\`\`json
 {

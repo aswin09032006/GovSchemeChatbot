@@ -10,8 +10,62 @@ import AuthView from './components/AuthView';
 import bgImage from './assets/bg.png';
 import logoImg from './assets/logo.png';
 
+import { parse } from 'partial-json';
+
 const API_BASE = (import.meta.env.VITE_API_URL || 'https://policypilot-backend-cs2y.onrender.com').replace(/\/$/, '');
 const API_URL = `${API_BASE}/api/chat`;
+
+// Pull only the human-readable text out of an AI message for text-to-speech.
+// Backend replies are a single JSON object ({ blocks: [...] }), so reading the
+// raw string makes the voice say "json", field names, commas, braces, etc.
+const extractSpeakableText = (content) => {
+  if (!content || typeof content !== 'string') return '';
+  const jsonStart = content.indexOf('{');
+  if (jsonStart !== -1) {
+    try {
+      const parsed = parse(content.slice(jsonStart));
+      if (parsed && Array.isArray(parsed.blocks)) {
+        const parts = [];
+        const rawPreText = content.slice(0, jsonStart).trim();
+        const preText = rawPreText.replace(/```(?:json)?\s*/gi, '').trim();
+        if (preText) parts.push(preText);
+        for (const block of parsed.blocks) {
+          if (!block || typeof block !== 'object') continue;
+          if (block.type === 'markdown' && block.content) {
+            parts.push(block.content);
+          } else if (block.type === 'scholarships' && Array.isArray(block.data)) {
+            parts.push(
+              block.data
+                .map((s) => s && [s.title, s.description, Array.isArray(s.points) ? s.points.join('. ') : ''].filter(Boolean).join('. '))
+                .filter(Boolean)
+                .join('\n\n')
+            );
+          } else if (block.type === 'links' && Array.isArray(block.data)) {
+            parts.push(
+              block.data
+                .map((l) => l && [l.title, l.description].filter(Boolean).join('. '))
+                .filter(Boolean)
+                .join('\n\n')
+            );
+          } else if (block.type === 'table' && block.data?.rows && Array.isArray(block.data.rows)) {
+            parts.push(
+              block.data.rows
+                .map((r) => Array.isArray(r) ? r.join(', ') : '')
+                .filter(Boolean)
+                .join('\n')
+            );
+          }
+        }
+        const joined = parts.filter(Boolean).join('\n\n').trim();
+        if (joined) return joined;
+      }
+    } catch {
+      // fall through to treating content as plain text
+    }
+  }
+  // Not structured JSON (user messages, errors, plain markdown) — read as-is.
+  return content;
+};
 
 const getLocaleCode = (lang) => {
   switch (lang) {
@@ -124,6 +178,7 @@ function App() {
 
   // --- FIX 1: Updated speakText for Edge compatibility ---
   const speakText = (text, messageId, onEndCallback) => {
+    console.log('[TTS] speakText called', { messageId, textLen: (text || '').length });
     // If clicking the same message that's currently speaking, toggle it off
     if (activeSpeechIndex === messageId && messageId !== null) {
       stopSpeaking();
@@ -141,17 +196,31 @@ function App() {
       window.speechSynthesis.cancel();
     }
 
-    setActiveSpeechIndex(messageId);
-
-    // Strip markdown formatting for natural reading
-    const cleanText = text
+    // Pull the readable text out of the structured JSON reply first, then
+    // strip markdown formatting so the voice reads naturally.
+    const cleanText = extractSpeakableText(text)
+      .replace(/```(?:json)?\s*/gi, '')
+      .replace(/```[\s\S]*?```/g, '')        // Remove fenced code blocks entirely
+      .replace(/```[\s\S]*$/g, '')           // Remove an unterminated/streaming code fence and everything after it
+      .replace(/`[^`]*`/g, '')               // Remove inline code spans
       .replace(/[-=]{2,}/g, '')              // Remove markdown dividers like --- or ===
       .replace(/[*_~`#=]/g, '')              // Remove bold, italic, strikethrough, code, headers, and equals symbols
       .replace(/\[(.*?)\]\(.*?\)/g, '$1')    // Replace links with just their display text
       .replace(/^\s*[-*+]\s+/gm, '')         // Remove bullet point markers
       .replace(/^\s*\d+\.\s+/gm, '')         // Remove numbered list markers
       .replace(/>\s*/g, '')                  // Remove blockquote markers
+      .replace(/\s{2,}/g, ' ')               // Collapse extra whitespace left by removals
       .trim();
+
+    console.log('[TTS] cleanText length:', cleanText.length, '| voices:', window.speechSynthesis.getVoices().length, '| preview:', cleanText.slice(0, 80));
+    // Nothing readable (e.g. a form-only reply) — don't leave the UI stuck.
+    if (!cleanText) {
+      setActiveSpeechIndex(null);
+      if (onEndCallback) onEndCallback();
+      return;
+    }
+
+    setActiveSpeechIndex(messageId);
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
     const targetLang = getLocaleCode(language);
@@ -183,7 +252,17 @@ function App() {
     };
 
     window.speechUtterance = utterance;
-    window.speechSynthesis.speak(utterance);
+
+    // Chrome/Edge bug: cancel() immediately followed by speak() can leave the
+    // engine stuck and silent. Defer the speak() to the next tick and make sure
+    // the queue isn't paused.
+    const startSpeaking = () => {
+      try {
+        window.speechSynthesis.resume();
+      } catch {}
+      window.speechSynthesis.speak(utterance);
+    };
+    setTimeout(startSpeaking, 60);
   };
 
   useEffect(() => {
@@ -777,3 +856,4 @@ function App() {
 }
 
 export default App;
+

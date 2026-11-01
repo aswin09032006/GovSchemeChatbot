@@ -13,6 +13,26 @@ import MapBlock from './MapBlock';
 
 import { parse } from 'partial-json';
 
+const cleanPreambleText = (text) => {
+  if (!text) return '';
+  let cleaned = text
+    .replace(/```(?:json)?\s*$/i, '')
+    .replace(/```(?:json)?\s*/gi, '')
+    .trim();
+
+  // If the preamble is internal AI thought/planning, discard it completely
+  if (/^(?:_?thought_process|thinking|user_intent|plan:)/i.test(cleaned)) {
+    return '';
+  }
+
+  // Also remove internal reasoning sections if mixed into preamble
+  cleaned = cleaned
+    .replace(/(?:^|\n)(?:_?thought_process|user_intent|missing_info|plan):[\s\S]*?(?=(\n[A-Z]|\n\n|$))/gi, '')
+    .trim();
+
+  return cleaned;
+};
+
 const parseMessageBlocks = (content) => {
   if (!content) return [];
   const jsonStart = content.indexOf('{');
@@ -24,7 +44,7 @@ const parseMessageBlocks = (content) => {
       if (parsed) {
         // Case 1: Standard structured blocks schema
         if (parsed.blocks && Array.isArray(parsed.blocks)) {
-          const preText = content.slice(0, jsonStart).trim();
+          const preText = cleanPreambleText(content.slice(0, jsonStart));
           const blocks = [...parsed.blocks];
           
           if (preText) {
