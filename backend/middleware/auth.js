@@ -9,7 +9,7 @@ export const authenticateToken = (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key_change_this_in_production');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'gov_scheme_chatbot_jwt_super_secret_key_2026_secure');
     req.user = decoded;
     next();
   } catch (error) {

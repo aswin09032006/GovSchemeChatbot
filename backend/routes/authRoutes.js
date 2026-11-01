@@ -5,7 +5,7 @@ import User from '../models/User.js';
 import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'secret_key_change_this_in_production';
+const getJwtSecret = () => process.env.JWT_SECRET || 'gov_scheme_chatbot_jwt_super_secret_key_2026_secure';
 
 // Get current user profile and verify session
 router.get('/me', authenticateToken, async (req, res) => {
@@ -24,7 +24,7 @@ router.get('/me', authenticateToken, async (req, res) => {
       }
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ message: err.message, error: err.message });
   }
 });
 
@@ -33,7 +33,7 @@ router.post('/register', async (req, res) => {
   try {
     const { firstName, lastName, email, password } = req.body;
 
-    if (!firstName || !lastName || !email || !password) {
+    if (!firstName?.trim() || !lastName?.trim() || !email?.trim() || !password) {
       return res.status(400).json({ message: 'All fields are required.' });
     }
 
@@ -60,7 +60,7 @@ router.post('/register', async (req, res) => {
 
     await newUser.save();
 
-    const token = jwt.sign({ id: newUser._id, email: newUser.email }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ id: newUser._id, email: newUser.email }, getJwtSecret(), { expiresIn: '7d' });
 
     res.status(201).json({
       token,
@@ -73,7 +73,7 @@ router.post('/register', async (req, res) => {
       }
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ message: err.message, error: err.message });
   }
 });
 
@@ -98,7 +98,7 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Invalid email or password.' });
     }
 
-    const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ id: user._id, email: user.email }, getJwtSecret(), { expiresIn: '7d' });
 
     res.json({
       token,
@@ -111,7 +111,7 @@ router.post('/login', async (req, res) => {
       }
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ message: err.message, error: err.message });
   }
 });
 
@@ -126,7 +126,7 @@ router.put('/preferences', authenticateToken, async (req, res) => {
 
     res.json({ preferences: user.preferences });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ message: err.message, error: err.message });
   }
 });
 
